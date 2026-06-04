@@ -1,0 +1,196 @@
+----------------------------------------------------------------------
+01:49:49 | PHASE: Pocket Agent overnight build  (run 20260605_014949)
+----------------------------------------------------------------------
+01:49:49 | build dir : D:/lang_graphs/pocket-agent
+01:49:49 | log file  : D:/lang_graphs/pocket-agent/logs/build_20260605_014949.log
+01:49:49 | mode      : FULL
+----------------------------------------------------------------------
+01:49:49 | PHASE: Preflight: locate Python >= 3.10
+----------------------------------------------------------------------
+01:49:50 | using interpreter: python3.13 (Python 3.13.13)
+----------------------------------------------------------------------
+01:49:50 | PHASE: Scaffold project tree + generate source
+----------------------------------------------------------------------
+01:49:50 | generated: pocket_agent/{__init__,state,tools,model,graph,stream,cli}.py
+01:49:50 | generated: alt_create_agent/agent.py, tests/, verify_milestones.py, pyproject.toml, README.md
+----------------------------------------------------------------------
+01:49:50 | PHASE: Create virtualenv + install dependencies
+----------------------------------------------------------------------
+01:49:56 | created .venv
+01:49:56 | venv python: D:/lang_graphs/pocket-agent/.venv/Scripts/python.exe
+01:50:03 | pip upgraded
+01:50:03 | installing [core]: langgraph langchain langgraph-checkpoint-sqlite
+Collecting langgraph
+  Downloading langgraph-1.2.4-py3-none-any.whl.metadata (8.0 kB)
+Collecting langchain
+  Downloading langchain-1.3.4-py3-none-any.whl.metadata (5.8 kB)
+Collecting langgraph-checkpoint-sqlite
+  Downloading langgraph_checkpoint_sqlite-3.1.0-py3-none-any.whl.metadata (3.2 kB)
+Collecting langchain-core<2,>=1.4.0 (from langgraph)
+  Downloading langchain_core-1.4.0-py3-none-any.whl.metadata (4.5 kB)
+Collecting langgraph-checkpoint<5.0.0,>=4.1.0 (from langgraph)
+  Downloading langgraph_checkpoint-4.1.1-py3-none-any.whl.metadata (5.2 kB)
+Collecting langgraph-prebuilt<1.2.0,>=1.1.0 (from langgraph)
+  Downloading langgraph_prebuilt-1.1.0-py3-none-any.whl.metadata (5.2 kB)
+Collecting langgraph-sdk<0.5.0,>=0.4.2 (from langgraph)
+  Downloading langgraph_sdk-0.4.2-py3-none-any.whl.metadata (3.6 kB)
+Collecting pydantic>=2.7.4 (from langgraph)
+  Using cached pydantic-2.13.4-py3-none-any.whl.metadata (109 kB)
+Collecting xxhash>=3.5.0 (from langgraph)
+  Using cached xxhash-3.7.0-cp313-cp313-win_amd64.whl.metadata (13 kB)
+Collecting jsonpatch<2.0.0,>=1.33.0 (from langchain-core<2,>=1.4.0->langgraph)
+  Using cached jsonpatch-1.33-py2.py3-none-any.whl.metadata (3.0 kB)
+Collecting langchain-protocol>=0.0.14 (from langchain-core<2,>=1.4.0->langgraph)
+  Downloading langchain_protocol-0.0.16-py3-none-any.whl.metadata (2.4 kB)
+Collecting langsmith<1.0.0,>=0.3.45 (from langchain-core<2,>=1.4.0->langgraph)
+  Downloading langsmith-0.8.9-py3-none-any.whl.metadata (15 kB)
+Collecting packaging>=23.2.0 (from langchain-core<2,>=1.4.0->langgraph)
+  Using cached packaging-26.2-py3-none-any.whl.metadata (3.5 kB)
+Collecting pyyaml<7.0.0,>=5.3.0 (from langchain-core<2,>=1.4.0->langgraph)
+  Using cached pyyaml-6.0.3-cp313-cp313-win_amd64.whl.metadata (2.4 kB)
+Collecting tenacity!=8.4.0,<10.0.0,>=8.1.0 (from langchain-core<2,>=1.4.0->langgraph)
+  Using cached tenacity-9.1.4-py3-none-any.whl.metadata (1.2 kB)
+Collecting typing-extensions<5.0.0,>=4.7.0 (from langchain-core<2,>=1.4.0->langgraph)
+  Using cached typing_extensions-4.15.0-py3-none-any.whl.metadata (3.3 kB)
+Collecting uuid-utils<1.0,>=0.12.0 (from langchain-core<2,>=1.4.0->langgraph)
+  Downloading uuid_utils-0.16.0-cp313-cp313-win_amd64.whl.metadata (6.5 kB)
+Collecting jsonpointer>=1.9 (from jsonpatch<2.0.0,>=1.33.0->langchain-core<2,>=1.4.0->langgraph)
+  Using cached jsonpointer-3.1.1-py3-none-any.whl.metadata (2.4 kB)
+Collecting ormsgpack>=1.12.0 (from langgraph-checkpoint<5.0.0,>=4.1.0->langgraph)
+  Using cached ormsgpack-1.12.2-cp313-cp313-win_amd64.whl.metadata (3.3 kB)
+Collecting httpx>=0.25.2 (from langgraph-sdk<0.5.0,>=0.4.2->langgraph)
+  Using cached httpx-0.28.1-py3-none-any.whl.metadata (7.1 kB)
+Collecting orjson>=3.11.5 (from langgraph-sdk<0.5.0,>=0.4.2->langgraph)
+  Using cached orjson-3.11.9-cp313-cp313-win_amd64.whl.metadata (43 kB)
+Collecting websockets<16,>=14 (from langgraph-sdk<0.5.0,>=0.4.2->langgraph)
+  Downloading websockets-15.0.1-cp313-cp313-win_amd64.whl.metadata (7.0 kB)
+Collecting requests-toolbelt>=1.0.0 (from langsmith<1.0.0,>=0.3.45->langchain-core<2,>=1.4.0->langgraph)
+  Using cached requests_toolbelt-1.0.0-py2.py3-none-any.whl.metadata (14 kB)
+Collecting requests>=2.0.0 (from langsmith<1.0.0,>=0.3.45->langchain-core<2,>=1.4.0->langgraph)
+  Using cached requests-2.34.2-py3-none-any.whl.metadata (4.8 kB)
+Collecting zstandard>=0.23.0 (from langsmith<1.0.0,>=0.3.45->langchain-core<2,>=1.4.0->langgraph)
+  Using cached zstandard-0.25.0-cp313-cp313-win_amd64.whl.metadata (3.3 kB)
+Collecting anyio (from httpx>=0.25.2->langgraph-sdk<0.5.0,>=0.4.2->langgraph)
+  Using cached anyio-4.13.0-py3-none-any.whl.metadata (4.5 kB)
+Collecting certifi (from httpx>=0.25.2->langgraph-sdk<0.5.0,>=0.4.2->langgraph)
+  Downloading certifi-2026.5.20-py3-none-any.whl.metadata (2.5 kB)
+Collecting httpcore==1.* (from httpx>=0.25.2->langgraph-sdk<0.5.0,>=0.4.2->langgraph)
+  Using cached httpcore-1.0.9-py3-none-any.whl.metadata (21 kB)
+Collecting idna (from httpx>=0.25.2->langgraph-sdk<0.5.0,>=0.4.2->langgraph)
+  Using cached idna-3.18-py3-none-any.whl.metadata (6.1 kB)
+Collecting h11>=0.16 (from httpcore==1.*->httpx>=0.25.2->langgraph-sdk<0.5.0,>=0.4.2->langgraph)
+  Using cached h11-0.16.0-py3-none-any.whl.metadata (8.3 kB)
+Collecting annotated-types>=0.6.0 (from pydantic>=2.7.4->langgraph)
+  Using cached annotated_types-0.7.0-py3-none-any.whl.metadata (15 kB)
+Collecting pydantic-core==2.46.4 (from pydantic>=2.7.4->langgraph)
+  Using cached pydantic_core-2.46.4-cp313-cp313-win_amd64.whl.metadata (6.7 kB)
+Collecting typing-inspection>=0.4.2 (from pydantic>=2.7.4->langgraph)
+  Using cached typing_inspection-0.4.2-py3-none-any.whl.metadata (2.6 kB)
+Collecting aiosqlite>=0.20 (from langgraph-checkpoint-sqlite)
+  Downloading aiosqlite-0.22.1-py3-none-any.whl.metadata (4.3 kB)
+Collecting sqlite-vec>=0.1.6 (from langgraph-checkpoint-sqlite)
+  Downloading sqlite_vec-0.1.9-py3-none-win_amd64.whl.metadata (198 bytes)
+Collecting charset_normalizer<4,>=2 (from requests>=2.0.0->langsmith<1.0.0,>=0.3.45->langchain-core<2,>=1.4.0->langgraph)
+  Using cached charset_normalizer-3.4.7-cp313-cp313-win_amd64.whl.metadata (41 kB)
+Collecting urllib3<3,>=1.26 (from requests>=2.0.0->langsmith<1.0.0,>=0.3.45->langchain-core<2,>=1.4.0->langgraph)
+  Using cached urllib3-2.7.0-py3-none-any.whl.metadata (6.9 kB)
+Downloading langgraph-1.2.4-py3-none-any.whl (245 kB)
+Downloading langchain_core-1.4.0-py3-none-any.whl (548 kB)
+   ---------------------------------------- 548.1/548.1 kB 10.8 MB/s  0:00:00
+Using cached jsonpatch-1.33-py2.py3-none-any.whl (12 kB)
+Downloading langgraph_checkpoint-4.1.1-py3-none-any.whl (56 kB)
+Downloading langgraph_prebuilt-1.1.0-py3-none-any.whl (41 kB)
+Downloading langgraph_sdk-0.4.2-py3-none-any.whl (160 kB)
+Downloading langsmith-0.8.9-py3-none-any.whl (403 kB)
+Using cached httpx-0.28.1-py3-none-any.whl (73 kB)
+Using cached httpcore-1.0.9-py3-none-any.whl (78 kB)
+Using cached pydantic-2.13.4-py3-none-any.whl (472 kB)
+Using cached pydantic_core-2.46.4-cp313-cp313-win_amd64.whl (2.1 MB)
+Using cached pyyaml-6.0.3-cp313-cp313-win_amd64.whl (154 kB)
+Using cached tenacity-9.1.4-py3-none-any.whl (28 kB)
+Using cached typing_extensions-4.15.0-py3-none-any.whl (44 kB)
+Downloading uuid_utils-0.16.0-cp313-cp313-win_amd64.whl (174 kB)
+Downloading websockets-15.0.1-cp313-cp313-win_amd64.whl (176 kB)
+Downloading langchain-1.3.4-py3-none-any.whl (125 kB)
+Downloading langgraph_checkpoint_sqlite-3.1.0-py3-none-any.whl (38 kB)
+Downloading aiosqlite-0.22.1-py3-none-any.whl (17 kB)
+Using cached annotated_types-0.7.0-py3-none-any.whl (13 kB)
+Using cached h11-0.16.0-py3-none-any.whl (37 kB)
+Using cached jsonpointer-3.1.1-py3-none-any.whl (7.7 kB)
+Downloading langchain_protocol-0.0.16-py3-none-any.whl (7.0 kB)
+Using cached orjson-3.11.9-cp313-cp313-win_amd64.whl (127 kB)
+Using cached ormsgpack-1.12.2-cp313-cp313-win_amd64.whl (117 kB)
+Using cached packaging-26.2-py3-none-any.whl (100 kB)
+Using cached requests-2.34.2-py3-none-any.whl (73 kB)
+Using cached charset_normalizer-3.4.7-cp313-cp313-win_amd64.whl (158 kB)
+Using cached idna-3.18-py3-none-any.whl (65 kB)
+Using cached urllib3-2.7.0-py3-none-any.whl (131 kB)
+Downloading certifi-2026.5.20-py3-none-any.whl (134 kB)
+Using cached requests_toolbelt-1.0.0-py2.py3-none-any.whl (54 kB)
+Downloading sqlite_vec-0.1.9-py3-none-win_amd64.whl (292 kB)
+Using cached typing_inspection-0.4.2-py3-none-any.whl (14 kB)
+Using cached xxhash-3.7.0-cp313-cp313-win_amd64.whl (31 kB)
+Using cached zstandard-0.25.0-cp313-cp313-win_amd64.whl (506 kB)
+Using cached anyio-4.13.0-py3-none-any.whl (114 kB)
+Installing collected packages: sqlite-vec, zstandard, xxhash, websockets, uuid-utils, urllib3, typing-extensions, tenacity, pyyaml, packaging, ormsgpack, orjson, jsonpointer, idna, h11, charset_normalizer, certifi, annotated-types, aiosqlite, typing-inspection, requests, pydantic-core, langchain-protocol, jsonpatch, httpcore, anyio, requests-toolbelt, pydantic, httpx, langsmith, langchain-core, langgraph-sdk, langgraph-checkpoint, langgraph-prebuilt, langgraph-checkpoint-sqlite, langgraph, langchain
+
+Successfully installed aiosqlite-0.22.1 annotated-types-0.7.0 anyio-4.13.0 certifi-2026.5.20 charset_normalizer-3.4.7 h11-0.16.0 httpcore-1.0.9 httpx-0.28.1 idna-3.18 jsonpatch-1.33 jsonpointer-3.1.1 langchain-1.3.4 langchain-core-1.4.0 langchain-protocol-0.0.16 langgraph-1.2.4 langgraph-checkpoint-4.1.1 langgraph-checkpoint-sqlite-3.1.0 langgraph-prebuilt-1.1.0 langgraph-sdk-0.4.2 langsmith-0.8.9 orjson-3.11.9 ormsgpack-1.12.2 packaging-26.2 pydantic-2.13.4 pydantic-core-2.46.4 pyyaml-6.0.3 requests-2.34.2 requests-toolbelt-1.0.0 sqlite-vec-0.1.9 tenacity-9.1.4 typing-extensions-4.15.0 typing-inspection-0.4.2 urllib3-2.7.0 uuid-utils-0.16.0 websockets-15.0.1 xxhash-3.7.0 zstandard-0.25.0
+01:50:25 |   ok [core]
+01:50:25 | installing [dev]: pytest
+Collecting pytest
+  Using cached pytest-9.0.3-py3-none-any.whl.metadata (7.6 kB)
+Collecting colorama>=0.4 (from pytest)
+  Using cached colorama-0.4.6-py2.py3-none-any.whl.metadata (17 kB)
+Collecting iniconfig>=1.0.1 (from pytest)
+  Using cached iniconfig-2.3.0-py3-none-any.whl.metadata (2.5 kB)
+Requirement already satisfied: packaging>=22 in .\.venv\Lib\site-packages (from pytest) (26.2)
+Collecting pluggy<2,>=1.5 (from pytest)
+  Using cached pluggy-1.6.0-py3-none-any.whl.metadata (4.8 kB)
+Collecting pygments>=2.7.2 (from pytest)
+  Using cached pygments-2.20.0-py3-none-any.whl.metadata (2.5 kB)
+Using cached pytest-9.0.3-py3-none-any.whl (375 kB)
+Using cached pluggy-1.6.0-py3-none-any.whl (20 kB)
+Using cached colorama-0.4.6-py2.py3-none-any.whl (25 kB)
+Using cached iniconfig-2.3.0-py3-none-any.whl (7.5 kB)
+Using cached pygments-2.20.0-py3-none-any.whl (1.2 MB)
+Installing collected packages: pygments, pluggy, iniconfig, colorama, pytest
+
+Successfully installed colorama-0.4.6 iniconfig-2.3.0 pluggy-1.6.0 pygments-2.20.0 pytest-9.0.3
+01:50:32 |   ok [dev]
+01:50:32 | POCKET_FORCE_MOCK=1 — skipping provider libs (mock mode)
+----------------------------------------------------------------------
+01:50:32 | PHASE: Unit tests (pytest)
+----------------------------------------------------------------------
+.......                                                                  [100%]
+7 passed in 1.62s
+01:50:37 | pytest: PASS
+----------------------------------------------------------------------
+01:50:37 | PHASE: Verify milestones M0-M7 + alt track
+----------------------------------------------------------------------
+D:\lang_graphs\pocket-agent\.venv\Lib\site-packages\langgraph\pregel\main.py:3679: LangChainBetaWarning: The v3 streaming protocol on Pregel is experimental.
+  return self._pregel_stream_v3(
+D:\lang_graphs\pocket-agent\.venv\Lib\site-packages\langgraph\pregel\main.py:3529: LangChainBetaWarning: The v3 streaming protocol on Pregel is experimental.
+  return GraphRunStream(graph_iter, mux)
+
+=== verifying milestones (model mode: mock) ===
+[PASS] M0 empty graph: START -> echo -> END returns input unchanged
+[PASS] M1 model + chat memory: 2 messages; final is an AI answer
+[PASS] M2 durable multi-turn memory: recall on same thread_id; isolation across a new thread_id
+[PASS] M3 tools + the cycle: agent -> tool(calculator=4183) -> agent final answer (the cycle)
+[PASS] M4 streaming (v3 + fallback): streamed a final answer via path='v3'
+[PASS] M5 human-approval gate (HITL): interrupt pauses before write; resume=True writes, resume=False cancels
+[PASS] M6 long-term Store: Store put/get/prefix-search works; graph compiles with store=
+[PASS] M7 time travel: 6 checkpoints enumerated; replayed from 1f16052d...
+[SKIP] ALT create_agent track: no live model in mock mode
+
+=== 8 passed / 0 failed / 1 skipped (required failures: 0) ===
+report: BUILD_REPORT.md
+01:50:38 | milestone harness exit code: 0 (0 = all required milestones passed)
+----------------------------------------------------------------------
+01:50:38 | PHASE: DONE
+----------------------------------------------------------------------
+01:50:38 | build dir : D:/lang_graphs/pocket-agent
+01:50:38 | report    : D:/lang_graphs/pocket-agent/BUILD_REPORT.md
+01:50:38 | full log  : D:/lang_graphs/pocket-agent/logs/build_20260605_014949.log
+01:50:38 | RESULT: all required milestones passed.
+01:50:38 | Tip: set ANTHROPIC_API_KEY or OPENAI_API_KEY (or POCKET_USE_OLLAMA=1) and re-run for real model answers + the create_agent track.

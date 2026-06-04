@@ -1,0 +1,83 @@
+02:04:01 | ================ Pocket Agent overnight (LM Studio) ================
+02:04:01 | model=qwen/qwen3.5-9b  ctx=8192  gpu=max  url=http://localhost:1234/v1
+02:04:01 | lms=/c/Users/heater/.lmstudio/bin/lms
+02:04:01 | log=/d/lang_graphs/pocket-agent/logs/overnight_lmstudio_20260605_020401.log
+02:04:01 | ---- hardware ----
+02:04:01 | GPU: NVIDIA GeForce RTX 4060 Laptop GPU, 8188 MiB, 683 MiB, 610.47
+02:04:01 | CPU cores=32  RAM=31.7 GB
+02:04:01 | ---- ensuring LM Studio server ----
+Success! Server is now running on port 1234
+02:04:02 | ---- loading model (idempotent) ----
+02:04:02 | model already loaded
+
+IDENTIFIER         MODEL              STATUS    SIZE       CONTEXT    PARALLEL    DEVICE    TTL
+qwen/qwen3.5-9b    qwen/qwen3.5-9b    IDLE      6.55 GB    8192       4           Local        
+
+02:04:03 | ---- tool-calling sanity check ----
+SANITY: tool-calling OK -> calculator
+02:04:05 | ---- launching build_pocket_agent.sh against LM Studio ----
+----------------------------------------------------------------------
+02:04:05 | PHASE: Pocket Agent overnight build  (run 20260605_020405)
+----------------------------------------------------------------------
+02:04:05 | build dir : /d/lang_graphs/pocket-agent
+02:04:05 | log file  : /d/lang_graphs/pocket-agent/logs/build_20260605_020405.log
+02:04:05 | mode      : FULL
+----------------------------------------------------------------------
+02:04:05 | PHASE: Preflight: locate Python >= 3.10
+----------------------------------------------------------------------
+02:04:06 | using interpreter: python3.13 (Python 3.13.13)
+----------------------------------------------------------------------
+02:04:06 | PHASE: Scaffold project tree + generate source
+----------------------------------------------------------------------
+02:04:06 | generated: pocket_agent/{__init__,state,tools,model,graph,stream,cli}.py
+02:04:06 | generated: alt_create_agent/agent.py, tests/, verify_milestones.py, pyproject.toml, README.md
+----------------------------------------------------------------------
+02:04:06 | PHASE: Create virtualenv + install dependencies
+----------------------------------------------------------------------
+02:04:06 | .venv already exists (reusing)
+02:04:06 | venv python: /d/lang_graphs/pocket-agent/.venv/Scripts/python.exe
+02:04:07 | pip upgraded
+02:04:07 | installing [core]: langgraph langchain langgraph-checkpoint-sqlite
+02:04:09 |   ok [core]
+02:04:09 | installing [dev]: pytest
+02:04:10 |   ok [dev]
+02:04:10 | installing [lmstudio]: langchain-openai
+02:04:23 |   ok [lmstudio]
+----------------------------------------------------------------------
+02:04:23 | PHASE: Unit tests (pytest)
+----------------------------------------------------------------------
+02:04:24 | pytest: PASS
+----------------------------------------------------------------------
+02:04:24 | PHASE: Verify milestones M0-M7 + alt track
+----------------------------------------------------------------------
+D:\lang_graphs\pocket-agent\.venv\Lib\site-packages\langgraph\pregel\main.py:3679: LangChainBetaWarning: The v3 streaming protocol on Pregel is experimental.
+  return self._pregel_stream_v3(
+D:\lang_graphs\pocket-agent\.venv\Lib\site-packages\langgraph\pregel\main.py:3529: LangChainBetaWarning: The v3 streaming protocol on Pregel is experimental.
+  return GraphRunStream(graph_iter, mux)
+
+=== verifying milestones (model mode: lmstudio) ===
+[PASS] M0 empty graph: START -> echo -> END returns input unchanged
+[PASS] M1 model + chat memory: 2 messages; final is an AI answer
+[PASS] M2 durable multi-turn memory: recall on same thread_id; isolation across a new thread_id
+[PASS] M3 tools + the cycle: agent -> tool(calculator=5929288761) -> final answer (the cycle)
+[PASS] M4 streaming (v3 + fallback): streamed a final answer via path='v3'
+[PASS] M5 human-approval gate (HITL): interrupt pauses before write; resume=True writes, resume=False cancels
+[PASS] M6 long-term Store: Store put/get/prefix-search works; graph compiles with store=
+[PASS] M7 time travel: 6 checkpoints enumerated; replayed from 1f16054d...
+[PASS] ALT create_agent track: create_agent reached behavioral parity (6*7=42)
+
+=== 9 passed / 0 failed / 0 skipped (required failures: 0) ===
+report: BUILD_REPORT.md
+02:04:59 | milestone harness exit code: 0 (0 = all required milestones passed)
+----------------------------------------------------------------------
+02:04:59 | PHASE: DONE
+----------------------------------------------------------------------
+02:04:59 | build dir : /d/lang_graphs/pocket-agent
+02:04:59 | report    : /d/lang_graphs/pocket-agent/BUILD_REPORT.md
+02:04:59 | full log  : /d/lang_graphs/pocket-agent/logs/build_20260605_020405.log
+02:04:59 | RESULT: all required milestones passed.
+02:04:59 | Tip: point at LM Studio (POCKET_USE_LMSTUDIO=1) or set ANTHROPIC_API_KEY/OPENAI_API_KEY/POCKET_USE_OLLAMA=1 for real answers + the create_agent track.
+02:04:59 | ================ DONE (build exit=0) ================
+02:04:59 | report : /d/lang_graphs/pocket-agent/BUILD_REPORT.md
+02:04:59 | log    : /d/lang_graphs/pocket-agent/logs/overnight_lmstudio_20260605_020401.log
+02:04:59 | model still loaded in LM Studio: qwen/qwen3.5-9b (run 'lms unload --all' to free VRAM)

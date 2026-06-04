@@ -1,0 +1,163 @@
+----------------------------------------------------------------------
+02:04:05 | PHASE: Pocket Agent overnight build  (run 20260605_020405)
+----------------------------------------------------------------------
+02:04:05 | build dir : /d/lang_graphs/pocket-agent
+02:04:05 | log file  : /d/lang_graphs/pocket-agent/logs/build_20260605_020405.log
+02:04:05 | mode      : FULL
+----------------------------------------------------------------------
+02:04:05 | PHASE: Preflight: locate Python >= 3.10
+----------------------------------------------------------------------
+02:04:06 | using interpreter: python3.13 (Python 3.13.13)
+----------------------------------------------------------------------
+02:04:06 | PHASE: Scaffold project tree + generate source
+----------------------------------------------------------------------
+02:04:06 | generated: pocket_agent/{__init__,state,tools,model,graph,stream,cli}.py
+02:04:06 | generated: alt_create_agent/agent.py, tests/, verify_milestones.py, pyproject.toml, README.md
+----------------------------------------------------------------------
+02:04:06 | PHASE: Create virtualenv + install dependencies
+----------------------------------------------------------------------
+02:04:06 | .venv already exists (reusing)
+02:04:06 | venv python: /d/lang_graphs/pocket-agent/.venv/Scripts/python.exe
+02:04:07 | pip upgraded
+02:04:07 | installing [core]: langgraph langchain langgraph-checkpoint-sqlite
+Requirement already satisfied: langgraph in .\.venv\Lib\site-packages (1.2.4)
+Requirement already satisfied: langchain in .\.venv\Lib\site-packages (1.3.4)
+Requirement already satisfied: langgraph-checkpoint-sqlite in .\.venv\Lib\site-packages (3.1.0)
+Requirement already satisfied: langchain-core<2,>=1.4.0 in .\.venv\Lib\site-packages (from langgraph) (1.4.0)
+Requirement already satisfied: langgraph-checkpoint<5.0.0,>=4.1.0 in .\.venv\Lib\site-packages (from langgraph) (4.1.1)
+Requirement already satisfied: langgraph-prebuilt<1.2.0,>=1.1.0 in .\.venv\Lib\site-packages (from langgraph) (1.1.0)
+Requirement already satisfied: langgraph-sdk<0.5.0,>=0.4.2 in .\.venv\Lib\site-packages (from langgraph) (0.4.2)
+Requirement already satisfied: pydantic>=2.7.4 in .\.venv\Lib\site-packages (from langgraph) (2.13.4)
+Requirement already satisfied: xxhash>=3.5.0 in .\.venv\Lib\site-packages (from langgraph) (3.7.0)
+Requirement already satisfied: jsonpatch<2.0.0,>=1.33.0 in .\.venv\Lib\site-packages (from langchain-core<2,>=1.4.0->langgraph) (1.33)
+Requirement already satisfied: langchain-protocol>=0.0.14 in .\.venv\Lib\site-packages (from langchain-core<2,>=1.4.0->langgraph) (0.0.16)
+Requirement already satisfied: langsmith<1.0.0,>=0.3.45 in .\.venv\Lib\site-packages (from langchain-core<2,>=1.4.0->langgraph) (0.8.9)
+Requirement already satisfied: packaging>=23.2.0 in .\.venv\Lib\site-packages (from langchain-core<2,>=1.4.0->langgraph) (26.2)
+Requirement already satisfied: pyyaml<7.0.0,>=5.3.0 in .\.venv\Lib\site-packages (from langchain-core<2,>=1.4.0->langgraph) (6.0.3)
+Requirement already satisfied: tenacity!=8.4.0,<10.0.0,>=8.1.0 in .\.venv\Lib\site-packages (from langchain-core<2,>=1.4.0->langgraph) (9.1.4)
+Requirement already satisfied: typing-extensions<5.0.0,>=4.7.0 in .\.venv\Lib\site-packages (from langchain-core<2,>=1.4.0->langgraph) (4.15.0)
+Requirement already satisfied: uuid-utils<1.0,>=0.12.0 in .\.venv\Lib\site-packages (from langchain-core<2,>=1.4.0->langgraph) (0.16.0)
+Requirement already satisfied: jsonpointer>=1.9 in .\.venv\Lib\site-packages (from jsonpatch<2.0.0,>=1.33.0->langchain-core<2,>=1.4.0->langgraph) (3.1.1)
+Requirement already satisfied: ormsgpack>=1.12.0 in .\.venv\Lib\site-packages (from langgraph-checkpoint<5.0.0,>=4.1.0->langgraph) (1.12.2)
+Requirement already satisfied: httpx>=0.25.2 in .\.venv\Lib\site-packages (from langgraph-sdk<0.5.0,>=0.4.2->langgraph) (0.28.1)
+Requirement already satisfied: orjson>=3.11.5 in .\.venv\Lib\site-packages (from langgraph-sdk<0.5.0,>=0.4.2->langgraph) (3.11.9)
+Requirement already satisfied: websockets<16,>=14 in .\.venv\Lib\site-packages (from langgraph-sdk<0.5.0,>=0.4.2->langgraph) (15.0.1)
+Requirement already satisfied: requests-toolbelt>=1.0.0 in .\.venv\Lib\site-packages (from langsmith<1.0.0,>=0.3.45->langchain-core<2,>=1.4.0->langgraph) (1.0.0)
+Requirement already satisfied: requests>=2.0.0 in .\.venv\Lib\site-packages (from langsmith<1.0.0,>=0.3.45->langchain-core<2,>=1.4.0->langgraph) (2.34.2)
+Requirement already satisfied: zstandard>=0.23.0 in .\.venv\Lib\site-packages (from langsmith<1.0.0,>=0.3.45->langchain-core<2,>=1.4.0->langgraph) (0.25.0)
+Requirement already satisfied: anyio in .\.venv\Lib\site-packages (from httpx>=0.25.2->langgraph-sdk<0.5.0,>=0.4.2->langgraph) (4.13.0)
+Requirement already satisfied: certifi in .\.venv\Lib\site-packages (from httpx>=0.25.2->langgraph-sdk<0.5.0,>=0.4.2->langgraph) (2026.5.20)
+Requirement already satisfied: httpcore==1.* in .\.venv\Lib\site-packages (from httpx>=0.25.2->langgraph-sdk<0.5.0,>=0.4.2->langgraph) (1.0.9)
+Requirement already satisfied: idna in .\.venv\Lib\site-packages (from httpx>=0.25.2->langgraph-sdk<0.5.0,>=0.4.2->langgraph) (3.18)
+Requirement already satisfied: h11>=0.16 in .\.venv\Lib\site-packages (from httpcore==1.*->httpx>=0.25.2->langgraph-sdk<0.5.0,>=0.4.2->langgraph) (0.16.0)
+Requirement already satisfied: annotated-types>=0.6.0 in .\.venv\Lib\site-packages (from pydantic>=2.7.4->langgraph) (0.7.0)
+Requirement already satisfied: pydantic-core==2.46.4 in .\.venv\Lib\site-packages (from pydantic>=2.7.4->langgraph) (2.46.4)
+Requirement already satisfied: typing-inspection>=0.4.2 in .\.venv\Lib\site-packages (from pydantic>=2.7.4->langgraph) (0.4.2)
+Requirement already satisfied: aiosqlite>=0.20 in .\.venv\Lib\site-packages (from langgraph-checkpoint-sqlite) (0.22.1)
+Requirement already satisfied: sqlite-vec>=0.1.6 in .\.venv\Lib\site-packages (from langgraph-checkpoint-sqlite) (0.1.9)
+Requirement already satisfied: charset_normalizer<4,>=2 in .\.venv\Lib\site-packages (from requests>=2.0.0->langsmith<1.0.0,>=0.3.45->langchain-core<2,>=1.4.0->langgraph) (3.4.7)
+Requirement already satisfied: urllib3<3,>=1.26 in .\.venv\Lib\site-packages (from requests>=2.0.0->langsmith<1.0.0,>=0.3.45->langchain-core<2,>=1.4.0->langgraph) (2.7.0)
+02:04:09 |   ok [core]
+02:04:09 | installing [dev]: pytest
+Requirement already satisfied: pytest in .\.venv\Lib\site-packages (9.0.3)
+Requirement already satisfied: colorama>=0.4 in .\.venv\Lib\site-packages (from pytest) (0.4.6)
+Requirement already satisfied: iniconfig>=1.0.1 in .\.venv\Lib\site-packages (from pytest) (2.3.0)
+Requirement already satisfied: packaging>=22 in .\.venv\Lib\site-packages (from pytest) (26.2)
+Requirement already satisfied: pluggy<2,>=1.5 in .\.venv\Lib\site-packages (from pytest) (1.6.0)
+Requirement already satisfied: pygments>=2.7.2 in .\.venv\Lib\site-packages (from pytest) (2.20.0)
+02:04:10 |   ok [dev]
+02:04:10 | installing [lmstudio]: langchain-openai
+Collecting langchain-openai
+  Downloading langchain_openai-1.2.2-py3-none-any.whl.metadata (3.1 kB)
+Requirement already satisfied: langchain-core<2.0.0,>=1.4.0 in .\.venv\Lib\site-packages (from langchain-openai) (1.4.0)
+Collecting openai<3.0.0,>=2.26.0 (from langchain-openai)
+  Downloading openai-2.41.0-py3-none-any.whl.metadata (32 kB)
+Collecting tiktoken<1.0.0,>=0.7.0 (from langchain-openai)
+  Using cached tiktoken-0.13.0-cp313-cp313-win_amd64.whl.metadata (6.8 kB)
+Requirement already satisfied: jsonpatch<2.0.0,>=1.33.0 in .\.venv\Lib\site-packages (from langchain-core<2.0.0,>=1.4.0->langchain-openai) (1.33)
+Requirement already satisfied: langchain-protocol>=0.0.14 in .\.venv\Lib\site-packages (from langchain-core<2.0.0,>=1.4.0->langchain-openai) (0.0.16)
+Requirement already satisfied: langsmith<1.0.0,>=0.3.45 in .\.venv\Lib\site-packages (from langchain-core<2.0.0,>=1.4.0->langchain-openai) (0.8.9)
+Requirement already satisfied: packaging>=23.2.0 in .\.venv\Lib\site-packages (from langchain-core<2.0.0,>=1.4.0->langchain-openai) (26.2)
+Requirement already satisfied: pydantic<3.0.0,>=2.7.4 in .\.venv\Lib\site-packages (from langchain-core<2.0.0,>=1.4.0->langchain-openai) (2.13.4)
+Requirement already satisfied: pyyaml<7.0.0,>=5.3.0 in .\.venv\Lib\site-packages (from langchain-core<2.0.0,>=1.4.0->langchain-openai) (6.0.3)
+Requirement already satisfied: tenacity!=8.4.0,<10.0.0,>=8.1.0 in .\.venv\Lib\site-packages (from langchain-core<2.0.0,>=1.4.0->langchain-openai) (9.1.4)
+Requirement already satisfied: typing-extensions<5.0.0,>=4.7.0 in .\.venv\Lib\site-packages (from langchain-core<2.0.0,>=1.4.0->langchain-openai) (4.15.0)
+Requirement already satisfied: uuid-utils<1.0,>=0.12.0 in .\.venv\Lib\site-packages (from langchain-core<2.0.0,>=1.4.0->langchain-openai) (0.16.0)
+Requirement already satisfied: jsonpointer>=1.9 in .\.venv\Lib\site-packages (from jsonpatch<2.0.0,>=1.33.0->langchain-core<2.0.0,>=1.4.0->langchain-openai) (3.1.1)
+Requirement already satisfied: httpx<1,>=0.23.0 in .\.venv\Lib\site-packages (from langsmith<1.0.0,>=0.3.45->langchain-core<2.0.0,>=1.4.0->langchain-openai) (0.28.1)
+Requirement already satisfied: orjson>=3.9.14 in .\.venv\Lib\site-packages (from langsmith<1.0.0,>=0.3.45->langchain-core<2.0.0,>=1.4.0->langchain-openai) (3.11.9)
+Requirement already satisfied: requests-toolbelt>=1.0.0 in .\.venv\Lib\site-packages (from langsmith<1.0.0,>=0.3.45->langchain-core<2.0.0,>=1.4.0->langchain-openai) (1.0.0)
+Requirement already satisfied: requests>=2.0.0 in .\.venv\Lib\site-packages (from langsmith<1.0.0,>=0.3.45->langchain-core<2.0.0,>=1.4.0->langchain-openai) (2.34.2)
+Requirement already satisfied: websockets>=15.0 in .\.venv\Lib\site-packages (from langsmith<1.0.0,>=0.3.45->langchain-core<2.0.0,>=1.4.0->langchain-openai) (15.0.1)
+Requirement already satisfied: xxhash>=3.0.0 in .\.venv\Lib\site-packages (from langsmith<1.0.0,>=0.3.45->langchain-core<2.0.0,>=1.4.0->langchain-openai) (3.7.0)
+Requirement already satisfied: zstandard>=0.23.0 in .\.venv\Lib\site-packages (from langsmith<1.0.0,>=0.3.45->langchain-core<2.0.0,>=1.4.0->langchain-openai) (0.25.0)
+Requirement already satisfied: anyio in .\.venv\Lib\site-packages (from httpx<1,>=0.23.0->langsmith<1.0.0,>=0.3.45->langchain-core<2.0.0,>=1.4.0->langchain-openai) (4.13.0)
+Requirement already satisfied: certifi in .\.venv\Lib\site-packages (from httpx<1,>=0.23.0->langsmith<1.0.0,>=0.3.45->langchain-core<2.0.0,>=1.4.0->langchain-openai) (2026.5.20)
+Requirement already satisfied: httpcore==1.* in .\.venv\Lib\site-packages (from httpx<1,>=0.23.0->langsmith<1.0.0,>=0.3.45->langchain-core<2.0.0,>=1.4.0->langchain-openai) (1.0.9)
+Requirement already satisfied: idna in .\.venv\Lib\site-packages (from httpx<1,>=0.23.0->langsmith<1.0.0,>=0.3.45->langchain-core<2.0.0,>=1.4.0->langchain-openai) (3.18)
+Requirement already satisfied: h11>=0.16 in .\.venv\Lib\site-packages (from httpcore==1.*->httpx<1,>=0.23.0->langsmith<1.0.0,>=0.3.45->langchain-core<2.0.0,>=1.4.0->langchain-openai) (0.16.0)
+Collecting distro<2,>=1.7.0 (from openai<3.0.0,>=2.26.0->langchain-openai)
+  Using cached distro-1.9.0-py3-none-any.whl.metadata (6.8 kB)
+Collecting jiter<1,>=0.10.0 (from openai<3.0.0,>=2.26.0->langchain-openai)
+  Downloading jiter-0.15.0-cp313-cp313-win_amd64.whl.metadata (5.3 kB)
+Collecting sniffio (from openai<3.0.0,>=2.26.0->langchain-openai)
+  Using cached sniffio-1.3.1-py3-none-any.whl.metadata (3.9 kB)
+Collecting tqdm>4 (from openai<3.0.0,>=2.26.0->langchain-openai)
+  Using cached tqdm-4.67.3-py3-none-any.whl.metadata (57 kB)
+Requirement already satisfied: annotated-types>=0.6.0 in .\.venv\Lib\site-packages (from pydantic<3.0.0,>=2.7.4->langchain-core<2.0.0,>=1.4.0->langchain-openai) (0.7.0)
+Requirement already satisfied: pydantic-core==2.46.4 in .\.venv\Lib\site-packages (from pydantic<3.0.0,>=2.7.4->langchain-core<2.0.0,>=1.4.0->langchain-openai) (2.46.4)
+Requirement already satisfied: typing-inspection>=0.4.2 in .\.venv\Lib\site-packages (from pydantic<3.0.0,>=2.7.4->langchain-core<2.0.0,>=1.4.0->langchain-openai) (0.4.2)
+Collecting regex (from tiktoken<1.0.0,>=0.7.0->langchain-openai)
+  Using cached regex-2026.5.9-cp313-cp313-win_amd64.whl.metadata (41 kB)
+Requirement already satisfied: charset_normalizer<4,>=2 in .\.venv\Lib\site-packages (from requests>=2.0.0->langsmith<1.0.0,>=0.3.45->langchain-core<2.0.0,>=1.4.0->langchain-openai) (3.4.7)
+Requirement already satisfied: urllib3<3,>=1.26 in .\.venv\Lib\site-packages (from requests>=2.0.0->langsmith<1.0.0,>=0.3.45->langchain-core<2.0.0,>=1.4.0->langchain-openai) (2.7.0)
+Requirement already satisfied: colorama in .\.venv\Lib\site-packages (from tqdm>4->openai<3.0.0,>=2.26.0->langchain-openai) (0.4.6)
+Downloading langchain_openai-1.2.2-py3-none-any.whl (99 kB)
+Downloading openai-2.41.0-py3-none-any.whl (1.4 MB)
+   ---------------------------------------- 1.4/1.4 MB 28.1 MB/s  0:00:00
+Using cached distro-1.9.0-py3-none-any.whl (20 kB)
+Downloading jiter-0.15.0-cp313-cp313-win_amd64.whl (196 kB)
+Using cached tiktoken-0.13.0-cp313-cp313-win_amd64.whl (874 kB)
+Using cached tqdm-4.67.3-py3-none-any.whl (78 kB)
+Using cached regex-2026.5.9-cp313-cp313-win_amd64.whl (277 kB)
+Using cached sniffio-1.3.1-py3-none-any.whl (10 kB)
+Installing collected packages: tqdm, sniffio, regex, jiter, distro, tiktoken, openai, langchain-openai
+
+Successfully installed distro-1.9.0 jiter-0.15.0 langchain-openai-1.2.2 openai-2.41.0 regex-2026.5.9 sniffio-1.3.1 tiktoken-0.13.0 tqdm-4.67.3
+02:04:23 |   ok [lmstudio]
+----------------------------------------------------------------------
+02:04:23 | PHASE: Unit tests (pytest)
+----------------------------------------------------------------------
+.......                                                                  [100%]
+7 passed in 0.24s
+02:04:24 | pytest: PASS
+----------------------------------------------------------------------
+02:04:24 | PHASE: Verify milestones M0-M7 + alt track
+----------------------------------------------------------------------
+D:\lang_graphs\pocket-agent\.venv\Lib\site-packages\langgraph\pregel\main.py:3679: LangChainBetaWarning: The v3 streaming protocol on Pregel is experimental.
+  return self._pregel_stream_v3(
+D:\lang_graphs\pocket-agent\.venv\Lib\site-packages\langgraph\pregel\main.py:3529: LangChainBetaWarning: The v3 streaming protocol on Pregel is experimental.
+  return GraphRunStream(graph_iter, mux)
+
+=== verifying milestones (model mode: lmstudio) ===
+[PASS] M0 empty graph: START -> echo -> END returns input unchanged
+[PASS] M1 model + chat memory: 2 messages; final is an AI answer
+[PASS] M2 durable multi-turn memory: recall on same thread_id; isolation across a new thread_id
+[PASS] M3 tools + the cycle: agent -> tool(calculator=5929288761) -> final answer (the cycle)
+[PASS] M4 streaming (v3 + fallback): streamed a final answer via path='v3'
+[PASS] M5 human-approval gate (HITL): interrupt pauses before write; resume=True writes, resume=False cancels
+[PASS] M6 long-term Store: Store put/get/prefix-search works; graph compiles with store=
+[PASS] M7 time travel: 6 checkpoints enumerated; replayed from 1f16054d...
+[PASS] ALT create_agent track: create_agent reached behavioral parity (6*7=42)
+
+=== 9 passed / 0 failed / 0 skipped (required failures: 0) ===
+report: BUILD_REPORT.md
+02:04:59 | milestone harness exit code: 0 (0 = all required milestones passed)
+----------------------------------------------------------------------
+02:04:59 | PHASE: DONE
+----------------------------------------------------------------------
+02:04:59 | build dir : /d/lang_graphs/pocket-agent
+02:04:59 | report    : /d/lang_graphs/pocket-agent/BUILD_REPORT.md
+02:04:59 | full log  : /d/lang_graphs/pocket-agent/logs/build_20260605_020405.log
+02:04:59 | RESULT: all required milestones passed.
+02:04:59 | Tip: point at LM Studio (POCKET_USE_LMSTUDIO=1) or set ANTHROPIC_API_KEY/OPENAI_API_KEY/POCKET_USE_OLLAMA=1 for real answers + the create_agent track.
