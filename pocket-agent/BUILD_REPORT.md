@@ -9,14 +9,14 @@
 | Milestone | Status | Detail | Req | Secs |
 |---|---|---|---|---|
 | M0 empty graph | PASS | START -> echo -> END returns input unchanged | yes | 0.0 |
-| M1 model + chat memory | PASS | 2 messages; final is an AI answer | yes | 8.76 |
-| M2 durable multi-turn memory | PASS | recall on same thread_id; isolation across a new thread_id | yes | 7.26 |
-| M3 tools + the cycle | PASS | agent -> tool(calculator=5929288761) -> final answer (the cycle) | yes | 3.69 |
-| M4 streaming (v3 + fallback) | PASS | streamed a final answer via path='v3' |  | 2.32 |
-| M5 human-approval gate (HITL) | PASS | interrupt pauses before write; resume=True writes, resume=False cancels | yes | 5.27 |
-| M6 long-term Store | PASS | Store put/get/prefix-search works; graph compiles with store= |  | 0.01 |
-| M7 time travel | PASS | 6 checkpoints enumerated; replayed from 1f16054d... |  | 4.28 |
-| ALT create_agent track | PASS | create_agent reached behavioral parity (6*7=42) |  | 2.26 |
+| M1 model + chat memory | PASS | 2 messages; final is an AI answer | yes | 2.74 |
+| M2 durable multi-turn memory | PASS | recall on same thread_id; isolation across a new thread_id | yes | 6.88 |
+| M3 tools + the cycle | PASS | agent -> tool(calculator=5929288761) -> final answer (the cycle) | yes | 3.48 |
+| M4 streaming (v3 + fallback) | PASS | streamed a final answer via path='v3' |  | 2.26 |
+| M5 human-approval gate (HITL) | PASS | interrupt pauses before write; resume=True writes, resume=False cancels | yes | 5.29 |
+| M6 long-term Store | PASS | Store put/get/prefix-search works; graph compiles with store= |  | 0.03 |
+| M7 time travel | PASS | 6 checkpoints enumerated; replayed from 1f160569... |  | 4.31 |
+| ALT create_agent track | PASS | create_agent reached behavioral parity (6*7=42) |  | 2.15 |
 
 ## Installed versions
 

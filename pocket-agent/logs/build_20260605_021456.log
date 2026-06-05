@@ -1,0 +1,22 @@
+----------------------------------------------------------------------
+02:14:56 | PHASE: Pocket Agent overnight build  (run 20260605_021456)
+----------------------------------------------------------------------
+02:14:56 | build dir : /d/lang_graphs/pocket-agent
+02:14:56 | log file  : /d/lang_graphs/pocket-agent/logs/build_20260605_021456.log
+02:14:56 | mode      : CHECK (generate + syntax-check only)
+----------------------------------------------------------------------
+02:14:56 | PHASE: Preflight: locate Python >= 3.10
+----------------------------------------------------------------------
+02:14:56 | using interpreter: python3.13 (Python 3.13.13)
+----------------------------------------------------------------------
+02:14:56 | PHASE: Scaffold project tree + generate source
+----------------------------------------------------------------------
+02:14:57 | generated: pocket_agent/{__init__,state,tools,model,graph,stream,cli}.py
+02:14:57 | generated: alt_create_agent/agent.py, tests/, verify_milestones.py, pyproject.toml, README.md
+----------------------------------------------------------------------
+02:14:57 | PHASE: Syntax-check generated Python (py_compile, no install)
+----------------------------------------------------------------------
+02:14:57 | py_compile OK — all generated modules parse.
+----------------------------------------------------------------------
+02:14:57 | PHASE: CHECK complete — sources generate & compile. Run without --check to build for real.
+----------------------------------------------------------------------
