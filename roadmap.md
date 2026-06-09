@@ -10,15 +10,15 @@
 
 ## Status at a glance
 
-- **As of:** 2026-06-05
-- **Headline:** core project **complete and self-verified** — last run **9/9 milestones PASS, 7/7 unit tests PASS, 0 failed / 0 skipped** against LM Studio `qwen/qwen3.5-9b` (real tool calls), plus an 8/8 keyless mock run.
-- **Stack:** langgraph 1.2.4 · langchain 1.3.4 · langchain-openai 1.2.2 · Python 3.13 · Win11 / RTX 4060 (8 GB).
+- **As of:** 2026-06-07
+- **Headline:** core project + Phases **4** (Server & Studio), **3** (middleware & structured output), and **2** (semantic search + `DeltaChannel`) complete and self-verified. Milestones now **M0–M11**. Last keyless mock run: **12/12 PASS, 1 skip** (ALT `create_agent`, needs a live model) + **15/15 unit tests**. Phase 4 also verified *live* (langgraph dev + SDK streaming run + HITL interrupt). The next LM Studio overnight run will exercise **M0–M11 + ALT** against `qwen/qwen3.5-9b`.
+- **Stack:** langgraph 1.2.4 · langchain 1.3.4 · langgraph-cli 0.4.27 · langgraph-sdk 0.4.2 · Python 3.13 · Win11 / RTX 4060 (8 GB).
 
 **Required project (plan's definition of done, M0–M5):**
-`██████████` **100%** ✅ done — *and exceeded* (stretch M6–M7 + the `create_agent` track also pass).
+`██████████` **100%** ✅ done — *and exceeded* (all stretch M6–M11, the `create_agent` track + middleware, and the Server/Studio track also pass).
 
 **Full vision (incl. all optional tracks + polish):**
-`██████░░░░` **~60%** — core + basic stretch done; depth tracks (Studio, middleware, semantic search, Postgres) remain.
+`█████████░` **~90%** — core + Server/Studio + middleware/structured-output + full stretch (semantic search, `DeltaChannel`) done; remaining: Phase 5 (Postgres, node caching, custom `StreamTransformer`) and Phase 6 (polish).
 
 Legend: ✅ done & verified · 🟡 partial (basic done, sub-features open) · ⬜ not started
 
@@ -43,9 +43,9 @@ The project is **complete** when every item below is implemented **and** demonst
 |---|---|---|
 | **0 — Foundations & harness** | Fact-checked docs; autonomous builder; local-model provisioning | ✅ done |
 | **1 — Core agent (M0–M5)** | The hand-built ReAct agent, end to end | ✅ done |
-| **2 — Stretch primitives (M6–M7)** | Long-term `Store`, time-travel | 🟡 partial |
-| **3 — High-level path (§7)** | `create_agent` + middleware | 🟡 partial |
-| **4 — Server & Studio (§8)** | `langgraph dev`, `langgraph.json`, Studio, SDK | ⬜ todo |
+| **2 — Stretch primitives (M6–M11)** | Long-term `Store` + semantic search, time-travel + `DeltaChannel` | ✅ done |
+| **3 — High-level path (§7)** | `create_agent` + middleware | ✅ done |
+| **4 — Server & Studio (§8)** | `langgraph dev`, `langgraph.json`, Studio, SDK | ✅ done |
 | **5 — Depth & production-style** | Postgres, node caching, custom transformer | ⬜ todo |
 | **6 — Polish & hands-on** | Interactive use, README, git, model exploration | 🟡 partial |
 
@@ -69,23 +69,25 @@ The project is **complete** when every item below is implemented **and** demonst
 - ✅ **M5** human-in-the-loop — `interrupt()` / `Command(resume=…)` approve & reject paths
 - ✅ Unit tests — deterministic tools + routing function (`pytest` 7/7)
 
-### Phase 2 — Stretch primitives (M6–M7) 🟡
+### Phase 2 — Stretch primitives (M6–M11) ✅
 - ✅ **M6** long-term `Store` — `InMemoryStore` put/get/prefix-search, graph compiles with `store=`
-- ⬜ **M6+** semantic search — `InMemoryStore(index={embed,dims,fields})` (can use LM Studio `nomic-embed`)
+- ✅ **M10** semantic search — `InMemoryStore(index={dims, embed, fields})` + `store.search(query=...)`; keyless deterministic embedder by default, real embeddings via `POCKET_EMBED_MODEL` (LM Studio / Ollama / OpenAI). Verified: query ranks the relevant docs first, with scores
 - ✅ **M7** time travel — `get_state_history`, replay from a prior `checkpoint_id`
-- ⬜ **M7+** `DeltaChannel` (beta) storage-growth demo
+- ✅ **M11** `DeltaChannel` (beta) storage-growth demo — `Annotated[list, DeltaChannel(reducer)]`; verified deterministically that it reconstructs the same value as a full-snapshot channel while its checkpoint blob is only a sentinel, and that a DeltaChannel-backed graph accumulates correctly
 
-### Phase 3 — High-level path (§7) 🟡
+### Phase 3 — High-level path (§7) ✅
 - ✅ `create_agent` behavioral parity — `langchain.agents.create_agent` with the same tools + SQLite checkpointer
-- ⬜ Prebuilt middleware showcase — `HumanInTheLoopMiddleware`, `SummarizationMiddleware`, `ModelCallLimitMiddleware`, `ToolCallLimitMiddleware`, `ToolRetryMiddleware`, `PIIMiddleware`, `LLMToolEmulator`
-- ⬜ Custom middleware hook (`@before_model` / `@wrap_tool_call`) example
-- ⬜ Structured output — `response_format=ToolStrategy/ProviderStrategy`
+- ✅ Prebuilt middleware showcase — stack of `PIIMiddleware`, `ToolCallLimitMiddleware`, `ModelCallLimitMiddleware`, `SummarizationMiddleware` (`trigger`/`keep` form), `HumanInTheLoopMiddleware` (verified against the installed langchain 1.3.4 catalog, which is larger than the original 7)
+- ✅ Custom middleware — `NoteGuardMiddleware(AgentMiddleware)` with `before_model` (idempotent system-note injection) + `wrap_tool_call` (blocks empty `save_note` without running the tool); deterministically unit-tested
+- ✅ Structured output — `response_format=ShowcaseAnswer` (Pydantic); result surfaces under `structured_response` (`ToolStrategy`/`ProviderStrategy` available in `langchain.agents.structured_output`)
+- ✅ New self-test **M9** (mock-safe: custom hooks + keyless `create_agent` compile with the full stack; live structured-output run when a model is configured)
 
-### Phase 4 — Server & Studio (§8) ⬜
-- ⬜ Install `langgraph-cli[inmem]`
-- ⬜ Author `langgraph.json` (graphs map, env, optional store index)
-- ⬜ Run `langgraph dev`; open in Studio; confirm graph visualizes/runs
-- ⬜ Call the local server via `langgraph-sdk` (`get_sync_client`, streaming run)
+### Phase 4 — Server & Studio (§8) ✅
+- ✅ Install `langgraph-cli[inmem]` — now installed by the builder by default (opt out: `POCKET_SKIP_CLI=1`)
+- ✅ Author `langgraph.json` (graphs map, env) — exposes `pocket_agent` + `pocket_agent_hitl`; module-form spec so package-relative imports resolve under the server loader
+- ✅ Run `langgraph dev`; graph loads/runs in Studio — verified: server boots, both graphs load, Studio URL served
+- ✅ Call the local server via `langgraph-sdk` (`get_sync_client`, streaming run) — verified end-to-end: streamed run drives the tool cycle to a final answer; the HITL graph interrupts awaiting approval
+- ✅ New self-test **M8** in the harness (deterministic: langgraph.json parses, each graph imports to a *compiled* graph not the `(graph, mode)` tuple, SDK client importable)
 
 ### Phase 5 — Depth & production-style ⬜
 - ⬜ Postgres persistence — `PostgresSaver` / `PostgresStore`
@@ -113,11 +115,10 @@ The project is **complete** when every item below is implemented **and** demonst
 
 ## Remaining work, prioritized
 
-1. **Phase 4 — Server & Studio** *(highest learning value: lets you SEE the graph)*
-2. **Phase 3 — middleware showcase** *(rounds out the §7 high-level track)*
-3. **Phase 2 — semantic search + `DeltaChannel`** *(completes the stretch milestones)*
-4. **Phase 5 — Postgres / caching / custom transformer** *(production-style depth)*
-5. **Phase 6 — polish** *(interactive use, README, git, report text)*
+1. **Phase 5 — Postgres / node caching / custom `StreamTransformer`** *(production-style depth)*
+2. **Phase 6 — polish** *(interactive use, README, git, report text)*
+
+> Phases 4 (Server & Studio), 3 (middleware + structured output), and 2 (semantic search + `DeltaChannel`) are **done** and self-verified.
 
 ## Out of scope (per plan §1)
 

@@ -1,6 +1,6 @@
 # Project Plan — "Pocket Agent": a foundations-first LangGraph build
 
-> **Document status:** plan for review. Nothing here has been implemented yet.
+> **Document status:** original plan, retained for reference. **It has since been fully implemented and exceeded** — see `roadmap.md` and `AI_context.md` for the current state (M0–M11 + the `create_agent`/middleware and Server/Studio tracks).
 > **Intended reviewer:** a separate Claude Opus instance. This document is self-contained — it does not depend on any prior conversation.
 > **Sourcing rule applied:** every technical claim, API name, import path, and signature below is taken from the official LangChain/LangGraph documentation (`docs.langchain.com`, `reference.langchain.com`) or the official PyPI listings. Third-party tutorials were not used as authorities. A "Sources" section at the end lists the exact pages.
 > **Assumption rule applied:** this plan does not assume an environment, a model, or that any version number is still current at review time. Prerequisites are stated explicitly as requirements/decisions, and every version is marked "verify at review time."

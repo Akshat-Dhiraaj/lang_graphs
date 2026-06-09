@@ -1,0 +1,43 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ---- Virtualenvs ----
+.venv/
+venv/
+env/
+
+# ---- Secrets / env (keep .env.example) ----
+.env
+.env.*
+!.env.example
+
+# ---- Pocket Agent build artifacts & scratch ----
+.build_tmp/
+logs/
+*.log
+*.db
+*.sqlite
+*.sqlite3
+notes.json
+test_notes.json
+pocket.db
+
+# ---- langgraph dev server state ----
+.langgraph_api/
+
+# ---- IDE / tooling ----
+.idea/
+.vscode/
+.claude/
+
+# ---- OS ----
+.DS_Store
+Thumbs.db

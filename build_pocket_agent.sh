@@ -23,7 +23,7 @@
 #   POCKET_MODEL       model name override   (provider default otherwise)
 #   POCKET_USE_OLLAMA  =1 to use local Ollama if reachable
 #   POCKET_FORCE_MOCK  =1 to force mock mode even if keys are present
-#   POCKET_INSTALL_CLI =1 to also install langgraph-cli[inmem] (Studio/server)
+#   POCKET_SKIP_CLI    =1 to skip langgraph-cli[inmem] (installed by default; Studio/server + M8 check)
 #
 # Runs on Linux, macOS, WSL, or Git Bash on Windows. POSIX bash.
 # =============================================================================
@@ -92,7 +92,8 @@ generate_sources() {
   # ---- pocket_agent/__init__.py
   cat > pocket_agent/__init__.py <<'PY'
 """Pocket Agent — a foundations-first LangGraph build (generated)."""
-__all__ = ["state", "tools", "model", "graph", "stream"]
+__all__ = ["state", "tools", "model", "graph", "stream", "server_graph",
+           "semantic", "delta_demo"]
 PY
 
   # ---- pocket_agent/state.py  (M1: MessagesState subclass)
@@ -487,6 +488,159 @@ if __name__ == "__main__":
     main()
 PY
 
+  # ---- pocket_agent/semantic.py  (Phase 2: Store semantic search)
+  cat > pocket_agent/semantic.py <<'PY'
+"""Phase 2 (stretch) - long-term Store *semantic* search.
+
+Verified against langgraph 1.2.4 / langchain-core 1.4.x: `InMemoryStore` enables
+vector search when constructed with an `index={"dims", "embed", "fields"}` config
+(disabled by default); `store.search(ns, query=...)` then returns scored items.
+
+Embeddings are keyless by default (a deterministic hashing vectorizer, so the
+whole feature runs in mock mode with no model). Set `POCKET_EMBED_MODEL` (plus the
+matching provider env) to use real embeddings (an LM Studio / Ollama / OpenAI
+embedding model).
+"""
+import os
+import math
+import hashlib
+
+from langchain_core.embeddings import Embeddings
+from langgraph.store.memory import InMemoryStore
+
+
+class MockHashingEmbeddings(Embeddings):
+    """Deterministic, keyless, dependency-free embeddings.
+
+    Hashes each lowercased alphanumeric token into a fixed-width vector and
+    L2-normalizes, so cosine similarity reflects lexical overlap. Good enough to
+    demonstrate semantic-style retrieval without downloading a model.
+    """
+
+    def __init__(self, dims: int = 64):
+        self.dims = dims
+
+    def _vec(self, text: str):
+        v = [0.0] * self.dims
+        cleaned = "".join(c.lower() if c.isalnum() else " " for c in (text or ""))
+        for tok in cleaned.split():
+            v[int(hashlib.md5(tok.encode()).hexdigest(), 16) % self.dims] += 1.0
+        norm = math.sqrt(sum(x * x for x in v)) or 1.0
+        return [x / norm for x in v]
+
+    def embed_documents(self, texts):
+        return [self._vec(t) for t in texts]
+
+    def embed_query(self, text):
+        return self._vec(text)
+
+
+def make_embeddings():
+    """Return ``(mode, embeddings, dims)``.
+
+    Defaults to the keyless mock embedder (the chat provider is usually not an
+    embedding model). Opt into real embeddings with ``POCKET_EMBED_MODEL`` + the
+    matching provider env (``OPENAI_API_KEY``, ``POCKET_USE_LMSTUDIO=1``, or
+    ``POCKET_USE_OLLAMA=1``); set ``POCKET_EMBED_DIMS`` to match the model.
+    """
+    model = os.getenv("POCKET_EMBED_MODEL")
+    if os.getenv("POCKET_FORCE_MOCK") == "1" or not model:
+        return "mock", MockHashingEmbeddings(64), 64
+    dims_env = os.getenv("POCKET_EMBED_DIMS")
+    try:
+        if os.getenv("OPENAI_API_KEY"):
+            from langchain_openai import OpenAIEmbeddings
+            return "openai", OpenAIEmbeddings(model=model), int(dims_env or 1536)
+        if os.getenv("POCKET_USE_LMSTUDIO") == "1":
+            from langchain_openai import OpenAIEmbeddings
+            base = os.getenv("POCKET_LMSTUDIO_BASE", "http://localhost:1234/v1")
+            return "lmstudio", OpenAIEmbeddings(base_url=base, api_key="lm-studio",
+                                                model=model), int(dims_env or 768)
+        if os.getenv("POCKET_USE_OLLAMA") == "1":
+            from langchain_ollama import OllamaEmbeddings
+            return "ollama", OllamaEmbeddings(model=model), int(dims_env or 768)
+    except Exception:
+        pass
+    return "mock", MockHashingEmbeddings(64), 64
+
+
+def make_semantic_store(embeddings=None, dims=None):
+    """An InMemoryStore with vector search enabled (semantic search is off by
+    default until an index config is supplied)."""
+    if embeddings is None:
+        _mode, embeddings, dims = make_embeddings()
+    if dims is None:
+        dims = getattr(embeddings, "dims", 1536)
+    return InMemoryStore(index={"dims": dims, "embed": embeddings, "fields": ["text"]})
+PY
+
+  # ---- pocket_agent/delta_demo.py  (Phase 2: DeltaChannel beta)
+  cat > pocket_agent/delta_demo.py <<'PY'
+"""Phase 2 (stretch) - DeltaChannel (beta): diff-based checkpoint storage.
+
+Verified against langgraph 1.2.4: ``DeltaChannel(reducer, typ, *, snapshot_frequency)``
+is a beta reducer channel that stores only a sentinel in each checkpoint blob and
+reconstructs state by replaying ancestor writes, so per-checkpoint storage stays
+~constant instead of growing with the accumulated value (avoids O(N^2) blob growth
+for append-only channels like long message/file histories).
+
+Attach it to a state key with ``Annotated[T, DeltaChannel(reducer)]``.
+"""
+import functools
+import operator
+from typing import Annotated, TypedDict
+
+from langgraph.channels.delta import DeltaChannel
+from langgraph.channels.binop import BinaryOperatorAggregate
+from langgraph.graph import StateGraph, START, END
+from langgraph.checkpoint.memory import InMemorySaver
+
+
+# DeltaChannel reducer contract: (base_value, sequence_of_writes) -> new_value.
+# This mirrors a list-concatenating BinaryOperatorAggregate(operator.add).
+def append_reducer(base, writes):
+    return functools.reduce(operator.add, writes, list(base))
+
+
+class DeltaState(TypedDict):
+    log: Annotated[list[str], DeltaChannel(append_reducer, list)]
+    n: int
+
+
+def build_delta_demo_graph(steps: int = 5, *, checkpointer=None):
+    """A tiny loop that appends to a DeltaChannel-backed ``log`` for ``steps`` steps."""
+    def step(state: DeltaState):
+        i = state.get("n", 0)
+        return {"log": [f"step{i}"], "n": i + 1}
+
+    def cont(state: DeltaState):
+        return END if state.get("n", 0) >= steps else "step"
+
+    builder = (StateGraph(DeltaState)
+               .add_node("step", step)
+               .add_edge(START, "step")
+               .add_conditional_edges("step", cont, {"step": "step", END: END}))
+    return builder.compile(checkpointer=checkpointer or InMemorySaver())
+
+
+def compare_channels(n: int = 8):
+    """Apply the same ``n`` writes to a DeltaChannel and an equivalent
+    BinaryOperatorAggregate; return
+    ``(same_value, delta_blob_is_sentinel, full_snapshot_len, n)``."""
+    d = DeltaChannel(append_reducer, list)
+    d.key = "log"
+    b = BinaryOperatorAggregate(list, operator.add)
+    b.key = "log"
+    for i in range(n):
+        d.update([[f"e{i}"]])
+        b.update([[f"e{i}"]])
+    same = d.get() == b.get()
+    delta_blob = d.checkpoint()          # sentinel (MISSING), NOT the list
+    full_blob = b.checkpoint()           # the full growing list
+    delta_is_sentinel = not isinstance(delta_blob, list)
+    return same, delta_is_sentinel, len(full_blob), n
+PY
+
   # ---- alt_create_agent/agent.py  (section 7: high-level factory)
   cat > alt_create_agent/agent.py <<'PY'
 """Section 7 - the same agent via the high-level create_agent factory.
@@ -507,6 +661,156 @@ def build_alt_agent(db_path="alt.db"):
     agent = create_agent(model, tools=ALL_TOOLS, checkpointer=cp)
     return agent, mode
 PY
+
+  # ---- alt_create_agent/middleware_showcase.py  (Phase 3: middleware + structured output)
+  cat > alt_create_agent/middleware_showcase.py <<'PY'
+"""Section 7+ (Phase 3) - middleware showcase + custom middleware + structured
+output, all on the high-level `create_agent` track.
+
+Verified against langchain 1.3.4: prebuilt middleware live in
+`langchain.agents.middleware`; structured-output strategies in
+`langchain.agents.structured_output`; a custom middleware subclasses
+`AgentMiddleware` and overrides typed hooks.
+
+Like the base ALT track, the *live* behaviour (real reasoning, summarization,
+structured parsing) needs a real model; construction/compilation and the custom
+guardrail logic are deterministic and verified in mock mode.
+"""
+import sqlite3
+from typing import Any
+
+from pydantic import BaseModel, Field
+from langchain_core.messages import SystemMessage, ToolMessage
+from langchain.agents import create_agent
+from langchain.agents.middleware import (
+    AgentMiddleware,
+    ToolCallRequest,
+    SummarizationMiddleware,
+    ModelCallLimitMiddleware,
+    ToolCallLimitMiddleware,
+    PIIMiddleware,
+    HumanInTheLoopMiddleware,
+)
+from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.checkpoint.sqlite import SqliteSaver
+
+from pocket_agent.model import make_chat_model
+from pocket_agent.tools import ALL_TOOLS
+
+_GUARD_NOTE = "Guardrail active: never save an empty note; keep answers concise."
+
+
+class ShowcaseAnswer(BaseModel):
+    """Structured final answer (create_agent `response_format`)."""
+    answer: str = Field(description="the final answer to the user")
+    tools_used: list[str] = Field(default_factory=list,
+                                  description="names of tools the agent used")
+
+
+class NoteGuardMiddleware(AgentMiddleware):
+    """Custom middleware demonstrating two hooks:
+
+    * ``before_model`` - inject a one-time system guardrail reminder (idempotent).
+    * ``wrap_tool_call`` - block ``save_note`` when the text is empty/whitespace,
+      returning a ToolMessage error *without* running the tool.
+    """
+
+    def before_model(self, state, runtime=None) -> dict[str, Any] | None:
+        msgs = (state.get("messages", []) if isinstance(state, dict)
+                else getattr(state, "messages", []))
+        for m in msgs:
+            if isinstance(m, SystemMessage) and _GUARD_NOTE in (m.content or ""):
+                return None  # already injected -> idempotent
+        return {"messages": [SystemMessage(content=_GUARD_NOTE)]}
+
+    def wrap_tool_call(self, request: ToolCallRequest, handler):
+        call = request.tool_call
+        name = call.get("name") if isinstance(call, dict) else getattr(call, "name", None)
+        args = (call.get("args") if isinstance(call, dict) else getattr(call, "args", {})) or {}
+        call_id = (call.get("id") if isinstance(call, dict) else getattr(call, "id", None)) or "0"
+        if name == "save_note" and not str(args.get("text", "")).strip():
+            return ToolMessage(content="error: refusing to save an empty note",
+                               tool_call_id=call_id, status="error")
+        return handler(request)
+
+
+def _middleware_stack(model):
+    """Prebuilt + custom middleware (all provider-agnostic). Order = inbound order."""
+    return [
+        PIIMiddleware("email", strategy="redact"),                  # sanitize inbound PII
+        NoteGuardMiddleware(),                                      # custom guardrail
+        ToolCallLimitMiddleware(thread_limit=10),                   # cap tool calls
+        ModelCallLimitMiddleware(thread_limit=10, run_limit=6),     # cap model calls
+        SummarizationMiddleware(model=model,                        # compress long history
+                                trigger=("tokens", 3000),
+                                keep=("messages", 10)),
+        HumanInTheLoopMiddleware(interrupt_on={"save_note": True}),  # human approval gate
+    ]
+
+
+def build_showcase_agent(model, *, checkpointer=None):
+    """Compile the showcase agent. ``model`` is a BaseChatModel or provider
+    string (create_agent + middleware require a model, never None)."""
+    return create_agent(
+        model=model,
+        tools=ALL_TOOLS,
+        middleware=_middleware_stack(model),
+        response_format=ShowcaseAnswer,
+        checkpointer=checkpointer or InMemorySaver(),
+    )
+
+
+def build_live_showcase_agent(db_path="showcase.db"):
+    """Live variant: resolve the configured provider; needs a real model."""
+    mode, model = make_chat_model()
+    if model is None:
+        raise RuntimeError("middleware showcase needs a live model "
+                           "(set a provider key or POCKET_USE_LMSTUDIO=1)")
+    cp = SqliteSaver(sqlite3.connect(db_path, check_same_thread=False))
+    return build_showcase_agent(model, checkpointer=cp), mode
+PY
+
+  # ---- pocket_agent/server_graph.py  (section 8: expose graph to langgraph dev / Studio / SDK)
+  cat > pocket_agent/server_graph.py <<'PY'
+"""Section 8 - expose the graph to `langgraph dev` / Studio / the SDK.
+
+`langgraph.json` can't point at `build_graph` directly: it returns a
+`(compiled_graph, mode)` tuple, but the server expects a *compiled graph*
+(or a zero-arg factory returning one). These factories unwrap the tuple.
+
+Persistence is deliberately NOT compiled in: `langgraph dev` (and the deployed
+platform) supply their own checkpointer/store, so the graph is compiled WITHOUT
+one to avoid conflicting with server-managed persistence. HITL `interrupt()`
+still works because the server provides the checkpointer at run time.
+"""
+from .graph import build_graph
+
+
+def make_graph(config=None):
+    """Plain ReAct graph (agent <-> tools cycle); server manages persistence."""
+    graph, _mode = build_graph(checkpointer=None, store=None, hitl=False)
+    return graph
+
+
+def make_graph_hitl(config=None):
+    """Same graph with the human-approval gate on `save_note` enabled, so the
+    interrupt -> resume flow is visible and clickable in Studio."""
+    graph, _mode = build_graph(checkpointer=None, store=None, hitl=True)
+    return graph
+PY
+
+  # ---- langgraph.json  (section 8: server/Studio config)
+  cat > langgraph.json <<'JSON'
+{
+  "$schema": "https://langgra.ph/schema.json",
+  "dependencies": ["."],
+  "graphs": {
+    "pocket_agent": "pocket_agent.server_graph:make_graph",
+    "pocket_agent_hitl": "pocket_agent.server_graph:make_graph_hitl"
+  },
+  "env": ".env"
+}
+JSON
 
   # ---- tests/test_tools.py
   cat > tests/test_tools.py <<'PY'
@@ -564,6 +868,95 @@ def test_routes_to_tools_on_tool_call():
 def test_routes_to_end_on_plain_answer():
     s = {"messages": [AIMessage(content="all done")]}
     assert route_after_agent(s) == END
+PY
+
+  # ---- tests/test_middleware.py  (Phase 3: custom middleware hooks, deterministic)
+  cat > tests/test_middleware.py <<'PY'
+import itertools
+from langchain_core.messages import AIMessage, SystemMessage, HumanMessage, ToolMessage
+from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
+from langgraph.checkpoint.memory import InMemorySaver
+from langchain.agents.middleware import ToolCallRequest
+from alt_create_agent.middleware_showcase import (
+    NoteGuardMiddleware, build_showcase_agent)
+
+
+def test_before_model_injects_once_then_idempotent():
+    mw = NoteGuardMiddleware()
+    out = mw.before_model({"messages": [HumanMessage(content="hi")]})
+    assert out and any(isinstance(m, SystemMessage) for m in out["messages"])
+    assert mw.before_model({"messages": out["messages"]}) is None
+
+
+def test_wrap_tool_call_blocks_empty_note():
+    mw = NoteGuardMiddleware()
+    ran = {"called": False}
+    def handler(req):
+        ran["called"] = True
+        return ToolMessage(content="saved", tool_call_id="x")
+    empty = ToolCallRequest(
+        tool_call={"name": "save_note", "args": {"text": "  "}, "id": "x", "type": "tool_call"},
+        tool=None, state={"messages": []}, runtime=None)
+    res = mw.wrap_tool_call(empty, handler)
+    assert getattr(res, "status", None) == "error" and not ran["called"]
+
+
+def test_wrap_tool_call_delegates_valid_note():
+    mw = NoteGuardMiddleware()
+    ran = {"called": False}
+    def handler(req):
+        ran["called"] = True
+        return ToolMessage(content="saved", tool_call_id="y")
+    ok = ToolCallRequest(
+        tool_call={"name": "save_note", "args": {"text": "real"}, "id": "y", "type": "tool_call"},
+        tool=None, state={"messages": []}, runtime=None)
+    res = mw.wrap_tool_call(ok, handler)
+    assert ran["called"] and res.content == "saved"
+
+
+def test_showcase_agent_compiles_keyless():
+    fake = GenericFakeChatModel(messages=itertools.cycle([AIMessage(content="ok")]))
+    agent = build_showcase_agent(fake, checkpointer=InMemorySaver())
+    assert hasattr(agent, "invoke") and hasattr(agent, "stream")
+PY
+
+  # ---- tests/test_semantic.py  (Phase 2: semantic search, deterministic mock embedder)
+  cat > tests/test_semantic.py <<'PY'
+from pocket_agent.semantic import MockHashingEmbeddings, make_semantic_store
+
+
+def test_mock_embeddings_dims_and_norm():
+    emb = MockHashingEmbeddings(64)
+    v = emb.embed_query("hello world")
+    assert len(v) == 64
+    assert abs(sum(x * x for x in v) - 1.0) < 1e-6  # L2-normalized
+
+
+def test_semantic_search_ranks_relevant_first():
+    store = make_semantic_store(MockHashingEmbeddings(64), 64)
+    store.put(("docs",), "d1", {"text": "python programming language tutorial"})
+    store.put(("docs",), "d2", {"text": "italian pasta and pizza recipes"})
+    store.put(("docs",), "d3", {"text": "guide to the rust programming language"})
+    res = store.search(("docs",), query="programming language", limit=3)
+    assert res and res[0].key in {"d1", "d3"}
+    assert all(getattr(r, "score", None) is not None for r in res)
+PY
+
+  # ---- tests/test_delta.py  (Phase 2: DeltaChannel beta, deterministic)
+  cat > tests/test_delta.py <<'PY'
+from pocket_agent.delta_demo import compare_channels, build_delta_demo_graph
+from langgraph.checkpoint.memory import InMemorySaver
+
+
+def test_delta_reconstructs_like_full_snapshot_but_stores_sentinel():
+    same, sentinel, full_len, n = compare_channels(8)
+    assert same and sentinel and full_len == 8 and n == 8
+
+
+def test_delta_graph_accumulates_across_steps():
+    g = build_delta_demo_graph(steps=5, checkpointer=InMemorySaver())
+    out = g.invoke({"log": [], "n": 0}, {"configurable": {"thread_id": "t"}})
+    assert out["log"] == [f"step{i}" for i in range(5)]
 PY
 
   # ---- verify_milestones.py  (the overnight self-test harness)
@@ -755,6 +1148,140 @@ def alt():
     return "create_agent reached behavioral parity (6*7=42)"
 
 
+def server_cfg():
+    """§8 - the graph is exposed for `langgraph dev` / Studio / the SDK.
+
+    Deterministic, no server boot: assert langgraph.json parses, each declared
+    graph imports to a *compiled* graph (NOT the (graph, mode) tuple), and the
+    SDK client entrypoint imports. Booting `langgraph dev` + a live SDK run is a
+    manual step (see README)."""
+    import json as _json
+    import importlib
+    cfgp = pathlib.Path("langgraph.json")
+    if not cfgp.exists():
+        raise RuntimeError("langgraph.json not found")
+    cfg = _json.loads(cfgp.read_text(encoding="utf-8"))
+    graphs = cfg.get("graphs", {})
+    assert graphs, "no graphs declared in langgraph.json"
+    loaded = []
+    for name, spec in graphs.items():
+        path_part, _, attr = spec.partition(":")
+        assert attr, f"graph '{name}' spec missing ':attr'"
+        modname = ("pocket_agent." + pathlib.Path(path_part).stem
+                   if path_part.endswith(".py") else path_part)
+        factory = getattr(importlib.import_module(modname), attr)
+        g = factory() if callable(factory) else factory
+        assert not isinstance(g, tuple), (
+            f"graph '{name}' resolved to a tuple; the server needs a compiled "
+            "graph (unwrap build_graph()[0])")
+        assert hasattr(g, "invoke") and hasattr(g, "stream"), \
+            f"graph '{name}' is not a compiled graph"
+        loaded.append(name)
+    from langgraph_sdk import get_sync_client  # noqa: F401  (call the live server)
+    return f"langgraph.json OK; compiled graphs: {', '.join(loaded)}; SDK client importable"
+
+
+def m9_middleware():
+    """§7+ (Phase 3) - middleware showcase + custom middleware + structured output.
+
+    Deterministic (mock-safe): the custom NoteGuardMiddleware hooks behave
+    correctly, and create_agent compiles with the full middleware stack +
+    response_format (verified with a keyless fake chat model). With a live model
+    configured, additionally run the agent and assert a structured_response."""
+    import itertools
+    from langchain_core.messages import AIMessage, SystemMessage, HumanMessage, ToolMessage
+    from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
+    from langgraph.checkpoint.memory import InMemorySaver
+    from langchain.agents.middleware import ToolCallRequest
+    from alt_create_agent.middleware_showcase import (
+        NoteGuardMiddleware, build_showcase_agent, build_live_showcase_agent)
+
+    # (1) custom before_model: inject a guardrail note once, then idempotent
+    mw = NoteGuardMiddleware()
+    out = mw.before_model({"messages": [HumanMessage(content="hi")]})
+    assert out and any(isinstance(m, SystemMessage) for m in out["messages"]), \
+        "before_model should inject a system note"
+    assert mw.before_model({"messages": out["messages"]}) is None, \
+        "before_model must be idempotent"
+
+    # (2) custom wrap_tool_call: block an empty save_note WITHOUT running it
+    ran = {"called": False}
+    def _handler(req):
+        ran["called"] = True
+        return ToolMessage(content="saved", tool_call_id="x")
+    empty = ToolCallRequest(
+        tool_call={"name": "save_note", "args": {"text": "  "}, "id": "x", "type": "tool_call"},
+        tool=None, state={"messages": []}, runtime=None)
+    blocked = mw.wrap_tool_call(empty, _handler)
+    assert getattr(blocked, "status", None) == "error" and not ran["called"], \
+        "empty save_note must be blocked and the tool not run"
+    ok = ToolCallRequest(
+        tool_call={"name": "save_note", "args": {"text": "real"}, "id": "y", "type": "tool_call"},
+        tool=None, state={"messages": []}, runtime=None)
+    delivered = mw.wrap_tool_call(ok, _handler)
+    assert ran["called"] and getattr(delivered, "content", None) == "saved", \
+        "a valid save_note must be delegated to the tool"
+
+    # (3) the whole stack + structured output COMPILES keyless (fake model)
+    fake = GenericFakeChatModel(messages=itertools.cycle([AIMessage(content="ok")]))
+    agent = build_showcase_agent(fake, checkpointer=InMemorySaver())
+    assert hasattr(agent, "invoke") and hasattr(agent, "stream"), \
+        "showcase agent did not compile"
+
+    # (4) live behaviour only when a real model is configured
+    if MODE == "mock":
+        return ("custom hooks OK; create_agent compiled with 6 middleware + "
+                "structured output (live run skipped: mock mode)")
+    agent_live, lmode = build_live_showcase_agent(db_path=fresh("showcase.db"))
+    cfg = {"configurable": {"thread_id": "m9"}}
+    r = agent_live.invoke(
+        {"messages": [{"role": "user", "content": "What is 6 * 7? Answer concisely."}]}, cfg)
+    assert "structured_response" in r, "expected a structured_response (response_format)"
+    return f"custom hooks OK; compiled; live structured_response present (mode={lmode})"
+
+
+def m10_semantic():
+    """§ stretch (Phase 2) - long-term Store *semantic* search.
+
+    Mock-safe: build an InMemoryStore with a vector index (keyless deterministic
+    embedder in mock mode), put docs, and assert the query ranks the relevant
+    docs above the unrelated one, with scores. Uses the configured provider's
+    embeddings when `POCKET_EMBED_MODEL` is set."""
+    from pocket_agent.semantic import make_embeddings, make_semantic_store
+    mode, emb, dims = make_embeddings()
+    store = make_semantic_store(emb, dims)
+    for k, t in [("d1", "python programming language tutorial"),
+                 ("d2", "italian pasta and pizza recipes"),
+                 ("d3", "guide to the rust programming language")]:
+        store.put(("docs",), k, {"text": t})
+    res = store.search(("docs",), query="programming language", limit=3)
+    assert res, "semantic search returned no results"
+    assert all(getattr(r, "score", None) is not None for r in res), "results should be scored"
+    top = res[0].key
+    assert top in {"d1", "d3"}, f"expected a programming doc ranked first, got {top}"
+    return f"semantic store ({mode} embeddings, dims={dims}): query ranked '{top}' first of {len(res)}"
+
+
+def m11_delta():
+    """§ stretch (Phase 2) - DeltaChannel (beta): diff-based checkpoint storage.
+
+    Deterministic & mock-safe: (1) a DeltaChannel and an equivalent
+    BinaryOperatorAggregate reconstruct the SAME accumulated value, but the
+    DeltaChannel's checkpoint blob is a sentinel (constant size) while the binop
+    stores the full growing list; (2) a graph using a DeltaChannel field
+    accumulates correctly across steps under a checkpointer."""
+    from pocket_agent.delta_demo import compare_channels, build_delta_demo_graph
+    from langgraph.checkpoint.memory import InMemorySaver
+    same, sentinel, full_len, n = compare_channels(8)
+    assert same, "DeltaChannel must reconstruct the same value as full-snapshot"
+    assert sentinel, "DeltaChannel checkpoint blob should be a sentinel, not the full list"
+    g = build_delta_demo_graph(steps=5, checkpointer=InMemorySaver())
+    out = g.invoke({"log": [], "n": 0}, {"configurable": {"thread_id": "m11"}})
+    assert out["log"] == [f"step{i}" for i in range(5)], f"unexpected delta graph log: {out['log']}"
+    return (f"DeltaChannel reconstructs == full snapshot over {n} writes; checkpoint "
+            f"stores a sentinel (vs full list len {full_len}); graph accumulated 5 steps")
+
+
 # ============================ run ===========================================
 print(f"\n=== verifying milestones (model mode: {MODE}) ===")
 record("M0 empty graph", m0, required=True)
@@ -765,6 +1292,19 @@ record("M4 streaming (v3 + fallback)", m4, required=False)
 record("M5 human-approval gate (HITL)", m5, required=True)
 record("M6 long-term Store", m6, required=False)
 record("M7 time travel", m7, required=False)
+try:
+    import langgraph_sdk  # noqa: F401
+    _HAVE_SDK = True
+except Exception:
+    _HAVE_SDK = False
+if _HAVE_SDK and pathlib.Path("langgraph.json").exists():
+    record("M8 server graph (langgraph dev / Studio / SDK)", server_cfg, required=False)
+else:
+    skip("M8 server graph (langgraph dev / Studio / SDK)",
+         "needs langgraph.json + langgraph-sdk (pip install 'langgraph-cli[inmem]')")
+record("M9 middleware showcase + structured output", m9_middleware, required=False)
+record("M10 Store semantic search", m10_semantic, required=False)
+record("M11 DeltaChannel (beta) diff-based checkpoints", m11_delta, required=False)
 if MODE == "mock":
     skip("ALT create_agent track", "no live model in mock mode")
 else:
@@ -780,7 +1320,8 @@ def ver(p):
 
 
 pkgs = ["langgraph", "langchain", "langchain-core", "langgraph-checkpoint",
-        "langgraph-checkpoint-sqlite", "langgraph-sdk", "langgraph-prebuilt",
+        "langgraph-checkpoint-sqlite", "langgraph-sdk", "langgraph-cli",
+        "langgraph-prebuilt",
         "langchain-anthropic", "langchain-openai", "langchain-ollama"]
 
 n_pass = sum(1 for r in results if r[1] == "PASS")
@@ -866,7 +1407,7 @@ ENV
   cat > README.md <<'MD'
 # Pocket Agent (generated)
 
-A foundations-first LangGraph agent built incrementally (M0-M7) plus a
+A foundations-first LangGraph agent built incrementally (M0-M11) plus a
 `create_agent` alternative track. Generated and self-verified by
 `build_pocket_agent.sh`.
 
@@ -883,8 +1424,49 @@ pytest -q                       # unit tests (tools + routing)
 python -m pocket_agent.cli      # interactive chat
 ```
 
+## Server / Studio (section 8)
+`langgraph.json` exposes two graphs: `pocket_agent` (plain) and
+`pocket_agent_hitl` (human-approval gate on `save_note`). The dev server
+supplies its own persistence, so the graphs are compiled without a checkpointer
+(HITL `interrupt()` still works — the server provides the checkpointer at run time).
+```bash
+pip install "langgraph-cli[inmem]"   # already installed by the builder
+langgraph dev                        # serves http://127.0.0.1:2024 + opens Studio
+```
+Drive the running server from Python via the SDK:
+```python
+from langgraph_sdk import get_sync_client
+client = get_sync_client(url="http://127.0.0.1:2024")
+thread = client.threads.create()
+for chunk in client.runs.stream(
+        thread["thread_id"], "pocket_agent",
+        input={"messages": [{"role": "user", "content": "what is 21 * 2?"}]},
+        stream_mode="values"):
+    print(chunk.data)
+```
+
+## Middleware & structured output (create_agent track, §7+)
+`alt_create_agent/middleware_showcase.py` builds the same agent on the
+high-level `create_agent` with a provider-agnostic middleware stack (PII
+redaction, tool/model call limits, summarization, human-approval gate) plus a
+custom `NoteGuardMiddleware` (`before_model` + `wrap_tool_call` guardrail) and a
+Pydantic `response_format`. The custom-hook logic and keyless compilation are
+verified in mock mode (**M9**); the structured answer + live middleware
+behaviour run when a model is configured.
+
 > M4 deliberately uses the v3 event-streaming API as the primary driver, with
 > the stable `stream_mode` / `invoke` path as an automatic fallback.
+
+## Stretch features (Phase 2)
+- **Semantic search (M10)** — `pocket_agent/semantic.py`: an `InMemoryStore` with
+  a vector `index={dims, embed, fields}`, so `store.search(ns, query=...)` returns
+  scored matches. Keyless by default (a deterministic hashing embedder); set
+  `POCKET_EMBED_MODEL` (+ provider env, optional `POCKET_EMBED_DIMS`) for real
+  embeddings (LM Studio / Ollama / OpenAI). `pip install numpy` for faster vectors.
+- **DeltaChannel (M11, beta)** — `pocket_agent/delta_demo.py`: attach
+  `Annotated[list, DeltaChannel(reducer)]` to a state key; the channel stores only
+  a sentinel per checkpoint and replays writes, so blob size stays ~constant as the
+  value grows (vs the full snapshot a normal reducer channel stores each step).
 MD
 
   say "generated: pocket_agent/{__init__,state,tools,model,graph,stream,cli}.py"
@@ -945,7 +1527,13 @@ venv_and_install() {
     [ "${POCKET_USE_OLLAMA:-}" = "1" ] && install_grp ollama langchain-ollama
     [ "${POCKET_USE_LMSTUDIO:-}" = "1" ] && install_grp lmstudio langchain-openai
   fi
-  [ "${POCKET_INSTALL_CLI:-}" = "1" ] && install_grp cli "langgraph-cli[inmem]"
+  # §8 server/Studio track: langgraph-cli[inmem] also pulls langgraph-sdk +
+  # langgraph-api, which the M8 server-graph check needs (else it SKIPs).
+  if [ "${POCKET_SKIP_CLI:-}" = "1" ]; then
+    say "POCKET_SKIP_CLI=1 — skipping langgraph-cli[inmem] (M8 will SKIP)"
+  else
+    install_grp cli "langgraph-cli[inmem]"
+  fi
   return 0
 }
 
@@ -960,7 +1548,7 @@ run_tests() {
 }
 
 run_milestones() {
-  phase "Verify milestones M0-M7 + alt track"
+  phase "Verify milestones M0-M11 + alt track"
   cd "$BUILD_DIR" || return 1
   set +o pipefail
   $TIMEOUT "$PY" verify_milestones.py 2>&1 | tee -a "$LOG"
