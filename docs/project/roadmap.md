@@ -11,14 +11,14 @@
 ## Status at a glance
 
 - **As of:** 2026-07-03
-- **Headline:** core project + Phases **4** (Server & Studio), **3** (middleware & structured output), **2** (semantic search + `DeltaChannel`), and the mock-safe pieces of **5** (Postgres helpers, node caching, custom stream projection) are implemented and self-verified. Milestones now **M0–M14**. Last keyless mock run: **15/15 PASS, 1 skip**. Last live LM Studio run with `qwen/qwen3.5-9b`: **16 passed, 0 failed, 0 skipped**. Unit tests: **19 passed, 1 skipped** (live Postgres test skipped because `POCKET_POSTGRES_URI` was not set).
+- **Headline:** core project + Phases **4** (Server & Studio), **3** (middleware & structured output), **2** (semantic search + `DeltaChannel`), and **5** (Postgres, node caching, custom stream projection) are implemented and self-verified. Milestones now **M0–M14**. Last keyless mock run: **15/15 PASS, 1 skip**. Last live LM Studio + Postgres run with `qwen/qwen3.5-9b`: **16 passed, 0 failed, 0 skipped**. Unit tests with live Postgres: **20 passed**.
 - **Stack:** langgraph 1.2.7 · langchain 1.3.11 · langgraph-sdk 0.4.2 · langgraph-cli 0.4.30 · optional langgraph-checkpoint-postgres 3.1.0 / psycopg 3.3.4 · Python 3.13 · Win11 / RTX 4060 (8 GB).
 
 **Required project (plan's definition of done, M0–M5):**
 `██████████` **100%** ✅ done — *and exceeded* (all stretch M6–M14, the `create_agent` track + middleware, and the Server/Studio track also pass or skip only when they require a live external service/model).
 
 **Full vision (incl. all optional tracks + polish):**
-`█████████░` **~95%** — core + Server/Studio + middleware/structured-output + full stretch + Phase 5 demos are done; remaining: live Postgres verification with a real DB and Phase 6 polish.
+`██████████` **~98%** — core + Server/Studio + middleware/structured-output + full stretch + Phase 5 are done; remaining work is Phase 6 polish and hands-on walkthrough quality.
 
 Legend: ✅ done & verified · 🟡 partial (basic done, sub-features open) · ⬜ not started
 
@@ -46,7 +46,7 @@ The project is **complete** when every item below is implemented **and** demonst
 | **2 — Stretch primitives (M6–M11)** | Long-term `Store` + semantic search, time-travel + `DeltaChannel` | ✅ done |
 | **3 — High-level path (§7)** | `create_agent` + middleware | ✅ done |
 | **4 — Server & Studio (§8)** | `langgraph dev`, `langgraph.json`, Studio, SDK | ✅ done |
-| **5 — Depth & production-style** | Postgres, node caching, custom transformer | 🟡 partial |
+| **5 — Depth & production-style** | Postgres, node caching, custom transformer | ✅ done |
 | **6 — Polish & hands-on** | Interactive use, README, git, model exploration | 🟡 partial |
 
 ---
@@ -89,8 +89,8 @@ The project is **complete** when every item below is implemented **and** demonst
 - ✅ Call the local server via `langgraph-sdk` (`get_sync_client`, streaming run) — verified end-to-end: streamed run drives the tool cycle to a final answer; the HITL graph interrupts awaiting approval
 - ✅ New self-test **M8** in the harness (deterministic: langgraph.json parses, each graph imports to a *compiled* graph not the `(graph, mode)` tuple, SDK client importable)
 
-### Phase 5 — Depth & production-style 🟡
-- 🟡 **M12** Postgres persistence — `pocket_agent/persistence.py` provides optional `PostgresSaver` / `PostgresStore` helpers. Import/helper path verified; live DB run is gated behind `POCKET_POSTGRES_URI` and `POCKET_POSTGRES_SETUP=1` for schema setup.
+### Phase 5 — Depth & production-style ✅
+- ✅ **M12** Postgres persistence — `pocket_agent/persistence.py` provides optional `PostgresSaver` / `PostgresStore` helpers. Live Docker Postgres validation passed with `POCKET_POSTGRES_URI` and explicit `POCKET_POSTGRES_SETUP=1`; the graph helper now keeps Postgres handles open for the graph context.
 - ✅ **M13** Node caching — `pocket_agent/cache_demo.py` verifies `CachePolicy(ttl=…)` + `InMemoryCache()` reuses a cached node result.
 - ✅ **M14** Custom `StreamTransformer` projection — `pocket_agent/stream_projection.py` projects custom node progress into a named `custom:progress` v3 stream channel.
 
@@ -104,7 +104,7 @@ The project is **complete** when every item below is implemented **and** demonst
 
 ## Where we are today
 
-**Working now (verified):** the full hand-built ReAct agent runs locally end-to-end — multi-turn memory, the tool loop with real tool calls, live token streaming, a working human-approval gate, semantic search, DeltaChannel, node caching, and a custom stream projection. Everything runs **keyless** (mock) for CI-style checks and against **LM Studio** for real answers. The live LM Studio verifier now passes with no skips. Postgres helper code is present; a live DB run needs `POCKET_POSTGRES_URI`.
+**Working now (verified):** the full hand-built ReAct agent runs locally end-to-end — multi-turn memory, the tool loop with real tool calls, live token streaming, a working human-approval gate, semantic search, DeltaChannel, node caching, and a custom stream projection. Everything runs **keyless** (mock) for CI-style checks and against **LM Studio** for real answers. The live LM Studio + Postgres verifier now passes with no skips.
 
 **Run it:**
 ```powershell
@@ -115,10 +115,9 @@ The project is **complete** when every item below is implemented **and** demonst
 
 ## Remaining work, prioritized
 
-1. **Live Postgres verification** — run M12 against a real local/container Postgres with `POCKET_POSTGRES_URI`.
-2. **Phase 6 — polish** *(interactive use, README, git, report text)*
+1. **Phase 6 — polish** *(interactive use, README walkthrough, CLI UX, report text)*
 
-> Phases 4 (Server & Studio), 3 (middleware + structured output), 2 (semantic search + `DeltaChannel`), and the mock-safe Phase 5 features are self-verified.
+> Phases 4 (Server & Studio), 3 (middleware + structured output), 2 (semantic search + `DeltaChannel`), and 5 (Postgres, caching, stream projection) are self-verified.
 
 ## Out of scope (per plan §1)
 
@@ -139,3 +138,4 @@ RAG / vector retrieval as a feature, multi-agent orchestration (supervisor/swarm
 | `build.cmd` / `lmstudio.cmd` | PowerShell launchers (call Git Bash) |
 | `pocket-agent/` | the generated, working project (source, tests, venv) |
 | `pocket-agent/BUILD_REPORT.md` | latest verification report |
+

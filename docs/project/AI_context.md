@@ -165,16 +165,16 @@ Python 3.13 (3.11+ required for `langgraph dev`).
 - ✅ **Phase 4** Server & Studio (M8) — also verified live: `langgraph dev` + SDK streaming run + HITL interrupt.
 - ✅ **Phase 3** middleware + structured output (M9).
 - ✅ **Phase 2** semantic search (M10) + DeltaChannel beta (M11).
-- 🟡 **Phase 5** — Postgres persistence helpers (`PostgresSaver`/`PostgresStore`) are
-  implemented and import-verified; live DB run awaits `POCKET_POSTGRES_URI`. Node
-  caching (M13) and custom `StreamTransformer` projection (M14) are implemented and
-  verified in mock mode.
+- ✅ **Phase 5** — Postgres persistence/store (M12), node caching (M13), and
+  custom `StreamTransformer` projection (M14) are implemented and verified. Live
+  Postgres validation passed against a temporary Docker Postgres database.
 - 🟡 **Phase 6** — polish: repo cleanup/docs are underway; live LM Studio
   validation now passes without skips.
 
 Last keyless mock run: **15/15 PASS, 1 skip** (ALT) + **19/20 unit tests**
 (1 skipped live Postgres test because `POCKET_POSTGRES_URI` was not set).
-Last live LM Studio run: **16/16 PASS, 0 skips** with `qwen/qwen3.5-9b`.
+Last live LM Studio + Postgres run: **16/16 PASS, 0 skips** with `qwen/qwen3.5-9b`;
+unit tests with live Postgres: **20/20 PASS**.
 
 ## Gotchas worth remembering
 
@@ -188,9 +188,12 @@ Last live LM Studio run: **16/16 PASS, 0 skips** with `qwen/qwen3.5-9b`.
 - M9's live structured-output assertion needs a real model; in mock it only checks the
   custom hooks + keyless compile.
 - M12's live Postgres assertion needs a reachable database via `POCKET_POSTGRES_URI`;
-  keep `POCKET_POSTGRES_SETUP=1` explicit because it creates/migrates tables.
+  keep `POCKET_POSTGRES_SETUP=1` explicit because it creates/migrates tables. Use
+  `open_postgres_graph(...)` as a context manager so saver/store handles remain open
+  while the graph runs.
 - `StreamChannel` only buffers side-channel items after a consumer subscribes. The M14
   demo uses a named channel so progress is also visible on the main stream as
   `custom:progress`.
 - `pip install numpy` makes `InMemoryStore` vector search faster (it falls back to pure
   Python otherwise — harmless warning).
+

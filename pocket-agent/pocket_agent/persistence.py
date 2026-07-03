@@ -54,8 +54,14 @@ def open_postgres_persistence(
         yield PostgresPersistence(checkpointer=checkpointer, store=store)
 
 
-def build_postgres_graph(conn_string: str, *, setup: bool = False, hitl: bool = False):
-    """Compile the canonical graph against Postgres saver/store handles."""
+@contextmanager
+def open_postgres_graph(
+    conn_string: str,
+    *,
+    setup: bool = False,
+    hitl: bool = False,
+):
+    """Compile a graph and keep its Postgres handles open for the context."""
     from .graph import build_graph
 
     with open_postgres_persistence(conn_string, setup=setup) as persistence:
@@ -64,4 +70,4 @@ def build_postgres_graph(conn_string: str, *, setup: bool = False, hitl: bool = 
             store=persistence.store,
             hitl=hitl,
         )
-        return graph, mode
+        yield graph, mode

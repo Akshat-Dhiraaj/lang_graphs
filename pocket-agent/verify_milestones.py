@@ -329,20 +329,20 @@ def m12_postgres():
     not require a running database. Set ``POCKET_POSTGRES_URI`` to exercise a
     real PostgresSaver/PostgresStore-backed graph.
     """
-    from pocket_agent.persistence import build_postgres_graph, postgres_available
+    from pocket_agent.persistence import open_postgres_graph, postgres_available
 
     if not postgres_available():
         return "live DB run skipped (install langgraph-checkpoint-postgres)"
     uri = os.getenv("POCKET_POSTGRES_URI")
     if not uri:
         return "Postgres helpers import; live DB run skipped (set POCKET_POSTGRES_URI)"
-    graph, _mode = build_postgres_graph(
+    with open_postgres_graph(
         uri,
         setup=os.getenv("POCKET_POSTGRES_SETUP") == "1",
-    )
-    cfg = {"configurable": {"thread_id": "m12-postgres"}}
-    graph.invoke({"messages": [{"role": "user", "content": "my name is Ada"}]}, cfg)
-    out = graph.invoke({"messages": [{"role": "user", "content": "what is my name?"}]}, cfg)
+    ) as (graph, _mode):
+        cfg = {"configurable": {"thread_id": "m12-postgres"}}
+        graph.invoke({"messages": [{"role": "user", "content": "my name is Ada"}]}, cfg)
+        out = graph.invoke({"messages": [{"role": "user", "content": "what is my name?"}]}, cfg)
     assert "Ada" in str(out["messages"][-1].content)
     return "PostgresSaver/PostgresStore compiled and preserved thread memory"
 

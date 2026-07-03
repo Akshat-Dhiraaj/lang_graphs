@@ -705,8 +705,14 @@ def open_postgres_persistence(
         yield PostgresPersistence(checkpointer=checkpointer, store=store)
 
 
-def build_postgres_graph(conn_string: str, *, setup: bool = False, hitl: bool = False):
-    """Compile the canonical graph against Postgres saver/store handles."""
+@contextmanager
+def open_postgres_graph(
+    conn_string: str,
+    *,
+    setup: bool = False,
+    hitl: bool = False,
+):
+    """Compile a graph and keep its Postgres handles open for the context."""
     from .graph import build_graph
 
     with open_postgres_persistence(conn_string, setup=setup) as persistence:
@@ -715,7 +721,7 @@ def build_postgres_graph(conn_string: str, *, setup: bool = False, hitl: bool = 
             store=persistence.store,
             hitl=hitl,
         )
-        return graph, mode
+        yield graph, mode
 PY
 
   # ---- pocket_agent/cache_demo.py  (Phase 5: node caching)
@@ -1144,7 +1150,7 @@ import os
 import pytest
 
 from pocket_agent.persistence import (
-    build_postgres_graph,
+    open_postgres_graph,
     open_postgres_persistence,
     postgres_available,
 )
@@ -1165,8 +1171,8 @@ def test_postgres_requires_connection_string():
     reason="set POCKET_POSTGRES_URI for live Postgres check",
 )
 def test_postgres_builder_with_configured_database():
-    graph, _mode = build_postgres_graph(os.environ["POCKET_POSTGRES_URI"])
-    assert hasattr(graph, "invoke")
+    with open_postgres_graph(os.environ["POCKET_POSTGRES_URI"]) as (graph, _mode):
+        assert hasattr(graph, "invoke")
 PY
 
   # ---- tests/test_cache.py  (Phase 5: node caching)
@@ -1523,20 +1529,20 @@ def m12_postgres():
     not require a running database. Set ``POCKET_POSTGRES_URI`` to exercise a
     real PostgresSaver/PostgresStore-backed graph.
     """
-    from pocket_agent.persistence import build_postgres_graph, postgres_available
+    from pocket_agent.persistence import open_postgres_graph, postgres_available
 
     if not postgres_available():
         return "live DB run skipped (install langgraph-checkpoint-postgres)"
     uri = os.getenv("POCKET_POSTGRES_URI")
     if not uri:
         return "Postgres helpers import; live DB run skipped (set POCKET_POSTGRES_URI)"
-    graph, _mode = build_postgres_graph(
+    with open_postgres_graph(
         uri,
         setup=os.getenv("POCKET_POSTGRES_SETUP") == "1",
-    )
-    cfg = {"configurable": {"thread_id": "m12-postgres"}}
-    graph.invoke({"messages": [{"role": "user", "content": "my name is Ada"}]}, cfg)
-    out = graph.invoke({"messages": [{"role": "user", "content": "what is my name?"}]}, cfg)
+    ) as (graph, _mode):
+        cfg = {"configurable": {"thread_id": "m12-postgres"}}
+        graph.invoke({"messages": [{"role": "user", "content": "my name is Ada"}]}, cfg)
+        out = graph.invoke({"messages": [{"role": "user", "content": "what is my name?"}]}, cfg)
     assert "Ada" in str(out["messages"][-1].content)
     return "PostgresSaver/PostgresStore compiled and preserved thread memory"
 
@@ -1765,7 +1771,9 @@ behaviour run when a model is configured.
 - **Postgres persistence/store (M12)** — `pocket_agent/persistence.py` keeps
   Postgres optional and explicit. Install with `pip install .[postgres]`, set
   `POCKET_POSTGRES_URI`, and optionally set `POCKET_POSTGRES_SETUP=1` to create
-  LangGraph tables before running the verifier.
+  LangGraph tables before running the verifier. Live validation passed against
+  Docker Postgres; use `open_postgres_graph(...)` as a context manager so handles
+  stay open while the graph runs.
 - **Node caching (M13)** — `pocket_agent/cache_demo.py` shows a single
   `CachePolicy(ttl=...)` node compiled with `InMemoryCache`.
 - **Custom stream projection (M14)** — `pocket_agent/stream_projection.py`
@@ -1896,3 +1904,5 @@ else
 fi
 say "Tip: point at LM Studio (POCKET_USE_LMSTUDIO=1) or set ANTHROPIC_API_KEY/OPENAI_API_KEY/POCKET_USE_OLLAMA=1 for real answers + the create_agent track."
 exit "${MILESTONE_RC:-0}"
+
+

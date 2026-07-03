@@ -65,7 +65,9 @@ behaviour run when a model is configured.
 - **Postgres persistence/store (M12)** — `pocket_agent/persistence.py` keeps
   Postgres optional and explicit. Install with `pip install .[postgres]`, set
   `POCKET_POSTGRES_URI`, and optionally set `POCKET_POSTGRES_SETUP=1` to create
-  LangGraph tables before running the verifier.
+  LangGraph tables before running the verifier. Live validation passed against
+  Docker Postgres; use `open_postgres_graph(...)` as a context manager so handles
+  stay open while the graph runs.
 - **Node caching (M13)** — `pocket_agent/cache_demo.py` shows a single
   `CachePolicy(ttl=...)` node compiled with `InMemoryCache`.
 - **Custom stream projection (M14)** — `pocket_agent/stream_projection.py`

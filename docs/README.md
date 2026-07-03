@@ -12,6 +12,8 @@ The markdown files are grouped by how they should be used.
   overnight monitor command, and log layout.
 - [lmstudio_live_validation.md](project/lmstudio_live_validation.md) — verified
   local model, load settings, and live verifier result.
+- [postgres_live_validation.md](project/postgres_live_validation.md) — live M12
+  Postgres validation result, Docker command, and connection-lifetime fix.
 
 ## Plans
 
@@ -29,3 +31,4 @@ The markdown files are grouped by how they should be used.
 `pocket-agent/` is generated output. Durable code changes belong in
 `scripts/build_pocket_agent.sh` first, then the generated tree should be
 regenerated and verified.
+
