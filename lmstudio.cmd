@@ -12,11 +12,11 @@ if not exist "%BASH%" set "BASH=C:\Program Files (x86)\Git\bin\bash.exe"
 if not exist "%BASH%" (
   echo [lmstudio.cmd] Git Bash not found.
   echo Install Git for Windows ^(https://git-scm.com^), or open a "Git Bash"
-  echo terminal in this folder and run:  ./overnight_lmstudio.sh
+  echo terminal in this folder and run:  ./scripts/overnight_lmstudio.sh
   exit /b 1
 )
 pushd "%~dp0"
-"%BASH%" overnight_lmstudio.sh %*
+"%BASH%" scripts/overnight_lmstudio.sh %*
 set "RC=%ERRORLEVEL%"
 popd
 exit /b %RC%

@@ -1,8 +1,8 @@
 # Pocket Agent (generated)
 
-A foundations-first LangGraph agent built incrementally (M0-M11) plus a
+A foundations-first LangGraph agent built incrementally (M0-M14) plus a
 `create_agent` alternative track. Generated and self-verified by
-`build_pocket_agent.sh`.
+`scripts/build_pocket_agent.sh`.
 
 ## Model modes
 Runs in deterministic **mock mode** with no API keys (verifies all wiring:
@@ -60,3 +60,14 @@ behaviour run when a model is configured.
   `Annotated[list, DeltaChannel(reducer)]` to a state key; the channel stores only
   a sentinel per checkpoint and replays writes, so blob size stays ~constant as the
   value grows (vs the full snapshot a normal reducer channel stores each step).
+
+## Production-style depth (Phase 5)
+- **Postgres persistence/store (M12)** — `pocket_agent/persistence.py` keeps
+  Postgres optional and explicit. Install with `pip install .[postgres]`, set
+  `POCKET_POSTGRES_URI`, and optionally set `POCKET_POSTGRES_SETUP=1` to create
+  LangGraph tables before running the verifier.
+- **Node caching (M13)** — `pocket_agent/cache_demo.py` shows a single
+  `CachePolicy(ttl=...)` node compiled with `InMemoryCache`.
+- **Custom stream projection (M14)** — `pocket_agent/stream_projection.py`
+  defines a v3 `StreamTransformer` that projects node progress into a named
+  `custom:progress` stream channel.

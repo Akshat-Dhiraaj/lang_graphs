@@ -19,7 +19,10 @@ NOTES = pathlib.Path(os.environ["POCKET_NOTES_PATH"])
 def fresh(name):
     p = TMP / name
     if p.exists():
-        p.unlink()
+        try:
+            p.unlink()
+        except PermissionError:
+            p = TMP / f"{p.stem}-{time.time_ns()}{p.suffix}"
     return str(p)
 
 
@@ -319,6 +322,51 @@ def m11_delta():
             f"stores a sentinel (vs full list len {full_len}); graph accumulated 5 steps")
 
 
+def m12_postgres():
+    """§ Phase 5 - Postgres persistence.
+
+    Default path is skip-aware: verify optional imports and helper shape, but do
+    not require a running database. Set ``POCKET_POSTGRES_URI`` to exercise a
+    real PostgresSaver/PostgresStore-backed graph.
+    """
+    from pocket_agent.persistence import build_postgres_graph, postgres_available
+
+    if not postgres_available():
+        return "live DB run skipped (install langgraph-checkpoint-postgres)"
+    uri = os.getenv("POCKET_POSTGRES_URI")
+    if not uri:
+        return "Postgres helpers import; live DB run skipped (set POCKET_POSTGRES_URI)"
+    graph, _mode = build_postgres_graph(
+        uri,
+        setup=os.getenv("POCKET_POSTGRES_SETUP") == "1",
+    )
+    cfg = {"configurable": {"thread_id": "m12-postgres"}}
+    graph.invoke({"messages": [{"role": "user", "content": "my name is Ada"}]}, cfg)
+    out = graph.invoke({"messages": [{"role": "user", "content": "what is my name?"}]}, cfg)
+    assert "Ada" in str(out["messages"][-1].content)
+    return "PostgresSaver/PostgresStore compiled and preserved thread memory"
+
+
+def m13_cache():
+    """§ Phase 5 - node caching."""
+    from pocket_agent.cache_demo import cache_roundtrip
+
+    first, second, calls = cache_roundtrip(5)
+    assert first == [{"expensive": {"result": 10}}]
+    assert second[-1].get("__metadata__", {}).get("cached") is True
+    assert calls == 1, f"expected cached second call, saw {calls} node executions"
+    return "CachePolicy + InMemoryCache reused the second node result"
+
+
+def m14_stream_projection():
+    """§ Phase 5 - custom v3 StreamTransformer projection."""
+    from pocket_agent.stream_projection import collect_progress_events
+
+    progress = collect_progress_events("ok")
+    assert progress == [{"stage": "node", "text": "ok"}]
+    return "StreamTransformer projected custom progress as custom:progress"
+
+
 # ============================ run ===========================================
 print(f"\n=== verifying milestones (model mode: {MODE}) ===")
 record("M0 empty graph", m0, required=True)
@@ -342,6 +390,9 @@ else:
 record("M9 middleware showcase + structured output", m9_middleware, required=False)
 record("M10 Store semantic search", m10_semantic, required=False)
 record("M11 DeltaChannel (beta) diff-based checkpoints", m11_delta, required=False)
+record("M12 Postgres persistence/store", m12_postgres, required=False)
+record("M13 node caching", m13_cache, required=False)
+record("M14 custom StreamTransformer", m14_stream_projection, required=False)
 if MODE == "mock":
     skip("ALT create_agent track", "no live model in mock mode")
 else:
@@ -358,7 +409,7 @@ def ver(p):
 
 pkgs = ["langgraph", "langchain", "langchain-core", "langgraph-checkpoint",
         "langgraph-checkpoint-sqlite", "langgraph-sdk", "langgraph-cli",
-        "langgraph-prebuilt",
+        "langgraph-prebuilt", "langgraph-checkpoint-postgres", "psycopg",
         "langchain-anthropic", "langchain-openai", "langchain-ollama"]
 
 n_pass = sum(1 for r in results if r[1] == "PASS")
@@ -386,13 +437,21 @@ lines.append("| Package | Version |")
 lines.append("|---|---|")
 for p in pkgs:
     lines.append(f"| {p} | {ver(p)} |")
-lines.append("\n## Next steps (need a human / a model)\n")
-lines.append("- Provide a tool-calling model for *real* answers: set "
-             "`ANTHROPIC_API_KEY` or `OPENAI_API_KEY` (or `POCKET_USE_OLLAMA=1` "
-             "with `ollama serve` + a tool-capable model) and re-run.")
+lines.append("\n## Next steps\n")
+if MODE == "mock":
+    lines.append("- Provide a tool-calling model for *real* answers: set "
+                 "`POCKET_USE_LMSTUDIO=1`, `ANTHROPIC_API_KEY`, or "
+                 "`OPENAI_API_KEY` (or `POCKET_USE_OLLAMA=1` with `ollama serve` "
+                 "+ a tool-capable model) and re-run.")
+else:
+    lines.append(f"- Live model mode is already active (`{MODE}`). Use "
+                 "`POCKET_FORCE_MOCK=1` when you want deterministic keyless checks.")
+if not os.getenv("POCKET_POSTGRES_URI"):
+    lines.append("- Optional live Postgres check: set `POCKET_POSTGRES_URI` and "
+                 "`POCKET_POSTGRES_SETUP=1` when you want the verifier to create "
+                 "or migrate tables.")
 lines.append("- Try it interactively: `python -m pocket_agent.cli`")
-lines.append("- Optional Studio/server track: install `langgraph-cli[inmem]`, "
-             "add a `langgraph.json`, run `langgraph dev`.")
+lines.append("- Optional Studio/server track: run `langgraph dev` from `pocket-agent/`.")
 pathlib.Path("BUILD_REPORT.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 print(f"\n=== {n_pass} passed / {n_fail} failed / {n_skip} skipped "

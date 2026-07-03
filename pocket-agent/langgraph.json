@@ -1,0 +1,9 @@
+{
+  "$schema": "https://langgra.ph/schema.json",
+  "dependencies": ["."],
+  "graphs": {
+    "pocket_agent": "pocket_agent.server_graph:make_graph",
+    "pocket_agent_hitl": "pocket_agent.server_graph:make_graph_hitl"
+  },
+  "env": ".env"
+}
