@@ -9,6 +9,7 @@ and reference material that explains it.
 .\build.cmd --check   # regenerate generated files and syntax-check them
 .\build.cmd           # full build: install deps, run tests, verify milestones
 .\lmstudio.cmd        # load the validated local model, then run the full build
+.\launch_sandbox.ps1  # open the local project overview + model sandbox
 .\scripts\overnight_system_run.ps1 -Hours 8 -RunBuildCheck -RunTests -RunMilestones
 ```
 
@@ -44,7 +45,7 @@ bash scripts/build_pocket_agent.sh
 | `scripts/build_pocket_agent.sh` | Source-of-truth generator and verifier for `pocket-agent/`. |
 | `scripts/overnight_lmstudio.sh` | LM Studio model provisioning plus full build. |
 | `scripts/overnight_system_run.ps1` | 6-8 hour Windows system monitor plus optional build/test/milestone loop. |
-| `build.cmd`, `lmstudio.cmd` | Windows launchers that call the scripts through Git Bash. |
+| `build.cmd`, `lmstudio.cmd`, `launch_sandbox.ps1` | Windows launchers for build, LM Studio validation, and the local web sandbox. |
 | `docs/project/` | Living project context and roadmap. |
 | `docs/plans/` | Original project plan retained for reference. |
 | `docs/reference/` | Fact-checked LangGraph information bank. |
@@ -59,4 +60,6 @@ bash scripts/build_pocket_agent.sh
   long-running monitor/debug script.
 - [Manual validation](docs/project/manual_validation.md) records the CLI and
   LangGraph server walkthrough.
+- [Sandbox launcher](docs/project/sandbox_launcher.md) explains the local web
+  overview and provider sandbox.
 - [Docs index](docs/README.md) organizes the markdown knowledge base.

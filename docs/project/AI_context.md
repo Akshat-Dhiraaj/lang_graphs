@@ -24,7 +24,7 @@ tree is its *output*.
 To change any generated file, edit its heredoc inside `scripts/build_pocket_agent.sh`, then
 regenerate. Hand-edits are overwritten on the next build. (Hand-maintained files that
 are NOT generated: `docs/project/*`, `docs/plans/*`, `docs/reference/*`,
-`scripts/*.sh`, `examples/*`, and the root `*.cmd` launchers.)
+`scripts/*.sh`, `examples/*`, and the root `*.cmd` / `*.ps1` launchers.)
 
 ## How to build, run, and verify
 
@@ -47,6 +47,7 @@ langgraph dev                          # http://127.0.0.1:2024 + opens Studio
 ```
 
 Windows launchers at the repo root: `build.cmd` (full build) and `lmstudio.cmd`.
+The local web overview/sandbox launcher is `launch_sandbox.ps1`.
 The LM Studio orchestration script lives at `scripts/overnight_lmstudio.sh`.
 For 6-8 hour system monitoring plus optional repeated project checks, use
 `scripts/overnight_system_run.ps1`.
@@ -95,7 +96,8 @@ exit code; everything else is `required=False` (informational, never blocks).
 ## Layout
 
 ```
-build.cmd / lmstudio.cmd       # Windows launchers
+build.cmd / lmstudio.cmd       # Windows build + LM Studio launchers
+launch_sandbox.ps1             # localhost project overview + provider sandbox
 README.md                      # repo map + common commands
 .gitignore
 docs/
@@ -168,8 +170,8 @@ Python 3.13 (3.11+ required for `langgraph dev`).
 - ✅ **Phase 5** — Postgres persistence/store (M12), node caching (M13), and
   custom `StreamTransformer` projection (M14) are implemented and verified. Live
   Postgres validation passed against a temporary Docker Postgres database.
-- 🟡 **Phase 6** — polish: repo cleanup/docs are underway; live LM Studio
-  validation now passes without skips.
+- ✅ **Phase 6** — polish: repo cleanup/docs, manual validation, model
+  exploration, and the localhost sandbox launcher are complete.
 
 Last keyless mock run: **15/15 PASS, 1 skip** (ALT) + **19/20 unit tests**
 (1 skipped live Postgres test because `POCKET_POSTGRES_URI` was not set).
@@ -180,6 +182,8 @@ Manual CLI + LangGraph server validation passed on 2026-07-03; see
 Model exploration found `meta-llama-3.1-8b-instruct` is a lighter full-pass
 fallback; keep `qwen/qwen3.5-9b` as the default because it has the broadest
 validation history in this repo.
+Local sandbox launcher added at `launch_sandbox.ps1`; see
+`docs/project/sandbox_launcher.md`.
 
 ## Gotchas worth remembering
 

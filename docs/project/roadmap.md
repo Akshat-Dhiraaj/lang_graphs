@@ -47,7 +47,7 @@ The project is **complete** when every item below is implemented **and** demonst
 | **3 — High-level path (§7)** | `create_agent` + middleware | ✅ done |
 | **4 — Server & Studio (§8)** | `langgraph dev`, `langgraph.json`, Studio, SDK | ✅ done |
 | **5 — Depth & production-style** | Postgres, node caching, custom transformer | ✅ done |
-| **6 — Polish & hands-on** | Interactive use, README, git, model exploration | 🟡 partial |
+| **6 — Polish & hands-on** | Interactive use, README, git, model exploration, localhost sandbox | ✅ done |
 
 ---
 
@@ -104,6 +104,9 @@ The project is **complete** when every item below is implemented **and** demonst
 - ✅ Model exploration — `meta-llama-3.1-8b-instruct` passed the full verifier
   as a lighter fallback; `google/gemma-4-e4b` passed the core graph but not ALT
   parity
+- ✅ Localhost sandbox — `launch_sandbox.ps1` opens a local project overview and
+  model sandbox with LM Studio, OpenAI/GPT, Anthropic/Claude, Gemini, and custom
+  OpenAI-compatible provider paths
 
 ---
 

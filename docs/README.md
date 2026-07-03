@@ -18,6 +18,8 @@ The markdown files are grouped by how they should be used.
   Postgres validation result, Docker command, and connection-lifetime fix.
 - [manual_validation.md](project/manual_validation.md) — CLI and LangGraph
   server/Studio walkthrough results.
+- [sandbox_launcher.md](project/sandbox_launcher.md) — local localhost overview,
+  provider sandbox, and latest repo gap review.
 
 ## Plans
 
@@ -32,7 +34,8 @@ The markdown files are grouped by how they should be used.
 
 ## Working Rule
 
-`pocket-agent/` is generated output. Durable code changes belong in
-`scripts/build_pocket_agent.sh` first, then the generated tree should be
-regenerated and verified.
+`pocket-agent/` is generated output. Durable code changes inside that generated
+project belong in `scripts/build_pocket_agent.sh` first, then the generated tree
+should be regenerated and verified. Root launchers and `docs/` are hand
+maintained.
 
