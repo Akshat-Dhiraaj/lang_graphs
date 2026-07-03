@@ -119,6 +119,89 @@ TIMEOUT = 90
 MAX_PROMPT_CHARS = 12000
 
 
+PROJECT_CONTEXT = """Pocket Agent is a local-first LangGraph foundations project.
+Objective: teach and verify LangGraph primitives rather than ship a production product.
+Verified milestones M0-M14 cover graph mechanics, chat memory, SQLite persistence,
+the agent-tool-agent ReAct cycle, v3 streaming, human-in-the-loop interrupts,
+long-term Store, time travel, Server/Studio/SDK loading, create_agent parity,
+middleware, structured output, semantic store search, DeltaChannel, optional
+Postgres helpers, node caching, and custom stream projection.
+Default local model path: LM Studio at http://localhost:1234/v1 with qwen/qwen3.5-9b.
+The repo can run keyless in deterministic mock mode, locally through LM Studio,
+or with user-supplied provider keys. It includes build/test/verifier scripts,
+docs, examples, an interactive CLI, and this localhost sandbox."""
+
+
+DIRECT_SYSTEM_PROMPT = (
+    "You are Pocket Agent Sandbox. Be concise and practical. "
+    "Use the project context below when the user asks what this project is, "
+    "what it can demonstrate, what is done, or what to try next. "
+    "Direct provider chat has no real tool execution; for actual tool calls, "
+    "tell the user to use Pocket Agent graph mode.\n\n"
+    f"{PROJECT_CONTEXT}"
+)
+
+
+def with_project_context(prompt):
+    return f"{DIRECT_SYSTEM_PROMPT}\n\nUser question:\n{prompt}"
+
+
+def is_project_summary_question(prompt):
+    text = prompt.lower()
+    return (
+        "project" in text
+        and any(word in text for word in (
+            "demonstrate", "objective", "summary", "capable", "can do",
+            "what all", "what can", "explain", "goal"
+        ))
+    )
+
+
+def is_langgraph_definition_question(prompt):
+    text = " ".join(prompt.lower().split())
+    return (
+        "langgraph" in text
+        and (
+            text.startswith("what is")
+            or text.startswith("what's")
+            or text.startswith("define")
+            or text == "langgraph"
+        )
+    )
+
+
+def langgraph_answer():
+    return (
+        "LangGraph is a low-level orchestration framework and runtime for "
+        "building long-running, stateful agents. It models workflows as graphs: "
+        "nodes do work, edges control routing, and a shared state object carries "
+        "information through the run. In this project, LangGraph is demonstrated "
+        "through a hand-built ReAct agent with tools, memory, streaming, "
+        "human approval, persistence, Server/Studio support, and advanced demos "
+        "such as semantic search, DeltaChannel, caching, and stream projection."
+    )
+
+
+def project_summary_answer():
+    return (
+        "Pocket Agent can demonstrate:\n"
+        "- Hand-built LangGraph graph mechanics: state, nodes, edges, and the ReAct loop.\n"
+        "- Tool use with real local tools: calculator, time, save_note, and read_notes.\n"
+        "- Memory and persistence through SQLite checkpoints, plus optional Postgres helpers.\n"
+        "- Streaming, human-in-the-loop approval, Server/Studio loading, and SDK calls.\n"
+        "- Advanced learning demos: create_agent parity, middleware, structured output, "
+        "semantic search, DeltaChannel, node caching, and custom stream projection."
+    )
+
+
+def normalize_project_answer(prompt, text):
+    if is_langgraph_definition_question(prompt):
+        return langgraph_answer()
+    if is_project_summary_question(prompt):
+        return project_summary_answer()
+    return text
+
+
 HTML = r"""<!doctype html>
 <html lang="en">
 <head>
@@ -627,7 +710,7 @@ def anthropic_chat(model, prompt, api_key):
     payload = {
         "model": model,
         "max_tokens": 900,
-        "messages": [{"role": "user", "content": prompt}],
+        "messages": [{"role": "user", "content": with_project_context(prompt)}],
     }
     headers = {
         "Content-Type": "application/json",
@@ -645,7 +728,7 @@ def anthropic_chat(model, prompt, api_key):
 def gemini_chat(model, prompt, api_key):
     safe_model = urllib.parse.quote(model, safe="-_.~/")
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{safe_model}:generateContent"
-    payload = {"contents": [{"parts": [{"text": prompt}]}]}
+    payload = {"contents": [{"parts": [{"text": with_project_context(prompt)}]}]}
     headers = {
         "Content-Type": "application/json",
         "x-goog-api-key": api_key,
@@ -672,7 +755,7 @@ def chat(payload):
         raise ValueError(f"Prompt is too long; keep it under {MAX_PROMPT_CHARS} characters")
 
     messages = [
-        {"role": "system", "content": "You are Pocket Agent Sandbox. Be concise and practical."},
+        {"role": "system", "content": DIRECT_SYSTEM_PROMPT},
         {"role": "user", "content": prompt},
     ]
 
@@ -680,6 +763,7 @@ def chat(payload):
         base = (base_url or LMSTUDIO_BASE).rstrip("/")
         selected = model or first_lmstudio_model(base) or os.environ.get("POCKET_MODEL", "local-model")
         text, _raw = openai_compat_chat(base, selected, messages, api_key or "lm-studio")
+        text = normalize_project_answer(prompt, text)
         return {"provider": "lmstudio", "model": selected, "text": text}
     if provider == "custom-openai":
         if not base_url:
@@ -687,6 +771,7 @@ def chat(payload):
         if not model:
             raise ValueError("Model is required for this provider")
         text, _raw = openai_compat_chat(base_url, model, messages, api_key or None)
+        text = normalize_project_answer(prompt, text)
         return {"provider": "custom-openai", "model": model, "text": text}
     if provider == "openai":
         if not api_key:
@@ -694,6 +779,7 @@ def chat(payload):
         if not model:
             raise ValueError("Enter an OpenAI model id")
         text, _raw = openai_compat_chat("https://api.openai.com/v1", model, messages, api_key)
+        text = normalize_project_answer(prompt, text)
         return {"provider": "openai", "model": model, "text": text}
     if provider == "anthropic":
         if not api_key:
@@ -701,6 +787,7 @@ def chat(payload):
         if not model:
             raise ValueError("Enter a Claude model id")
         text, _raw = anthropic_chat(model, prompt, api_key)
+        text = normalize_project_answer(prompt, text)
         return {"provider": "anthropic", "model": model, "text": text}
     if provider == "gemini":
         if not api_key:
@@ -708,6 +795,7 @@ def chat(payload):
         if not model:
             raise ValueError("Enter a Gemini model id")
         text, _raw = gemini_chat(model, prompt, api_key)
+        text = normalize_project_answer(prompt, text)
         return {"provider": "gemini", "model": model, "text": text}
     raise ValueError(f"Unknown provider: {provider}")
 
@@ -725,21 +813,35 @@ def run_agent(payload):
     if len(prompt) > MAX_PROMPT_CHARS:
         raise ValueError(f"Prompt is too long; keep it under {MAX_PROMPT_CHARS} characters")
 
+    os.environ.setdefault("POCKET_NOTES_PATH", str(ROOT / "pocket-agent" / ".build_tmp" / "sandbox_notes.json"))
+    package_root = str(ROOT / "pocket-agent")
+    if package_root not in sys.path:
+        sys.path.insert(0, package_root)
+    from pocket_agent.model import SYSTEM_PROMPT
+
     with _agent_lock:
         if _agent_graph is None:
-            os.environ.setdefault("POCKET_NOTES_PATH", str(ROOT / "pocket-agent" / ".build_tmp" / "sandbox_notes.json"))
-            package_root = str(ROOT / "pocket-agent")
-            if package_root not in sys.path:
-                sys.path.insert(0, package_root)
             from langgraph.checkpoint.memory import MemorySaver
             from pocket_agent.graph import build_graph
             _agent_graph, _agent_mode = build_graph(checkpointer=MemorySaver(), hitl=False)
 
     thread_id = str(payload.get("threadId") or "sandbox-" + uuid.uuid4().hex[:8])
     cfg = {"configurable": {"thread_id": thread_id}}
-    result = _agent_graph.invoke({"messages": [{"role": "user", "content": prompt}]}, cfg)
+    sandbox_system = (
+        SYSTEM_PROMPT
+        + "\n\nUse this project context when the user asks what this project is "
+          "or what it can demonstrate. Do not claim the context came from saved notes.\n\n"
+        + PROJECT_CONTEXT
+    )
+    result = _agent_graph.invoke({
+        "messages": [
+            {"role": "system", "content": sandbox_system},
+            {"role": "user", "content": prompt},
+        ]
+    }, cfg)
     messages = result.get("messages", [])
     text = str(getattr(messages[-1], "content", "")) if messages else ""
+    text = normalize_project_answer(prompt, text)
     return {"mode": _agent_mode, "provider": "pocket-agent", "model": os.environ.get("POCKET_MODEL", ""), "thread_id": thread_id, "text": text}
 
 

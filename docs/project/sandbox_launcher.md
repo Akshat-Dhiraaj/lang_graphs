@@ -35,6 +35,12 @@ Useful options:
 - Sandbox area with two modes:
   - **Pocket Agent graph**: imports and runs the repo's graph locally.
   - **Direct provider chat**: calls the selected provider API directly.
+- Project-summary questions return a deterministic local summary, so the answer
+  stays aligned with the repo instead of depending on provider memory or saved
+  notes.
+- Basic "what is LangGraph?" prompts also return a deterministic local answer,
+  so the sandbox remains useful when LM Studio is offline and graph mode falls
+  back to mock mode.
 
 ## Provider Paths
 
@@ -90,4 +96,8 @@ Validation performed for the launcher:
 - Fetch `/api/status`.
 - Exercise the direct LM Studio provider path.
 - Exercise the Pocket Agent graph path.
+- Verify that "What can this project demonstrate?" returns a grounded project
+  summary instead of asking for saved notes.
+- Verify that "what is langgraph" works after a prior graph request and does not
+  hit a cached-graph `SYSTEM_PROMPT` scoping error.
 - Stop the sandbox through the launcher.
