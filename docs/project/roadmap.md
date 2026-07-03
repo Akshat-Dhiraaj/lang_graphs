@@ -18,7 +18,7 @@
 `██████████` **100%** ✅ done — *and exceeded* (all stretch M6–M14, the `create_agent` track + middleware, and the Server/Studio track also pass or skip only when they require a live external service/model).
 
 **Full vision (incl. all optional tracks + polish):**
-`██████████` **~98%** — core + Server/Studio + middleware/structured-output + full stretch + Phase 5 are done; remaining work is Phase 6 polish and hands-on walkthrough quality.
+`██████████` **~99%** — core + Server/Studio + middleware/structured-output + full stretch + Phase 5 are done; remaining work is optional model exploration.
 
 Legend: ✅ done & verified · 🟡 partial (basic done, sub-features open) · ⬜ not started
 
@@ -99,8 +99,9 @@ The project is **complete** when every item below is implemented **and** demonst
   memory, HITL approval, and note readback validated
 - ✅ Server/Studio manual validation — `langgraph dev --no-browser`,
   `langgraph-sdk`, `pocket_agent`, and `pocket_agent_hitl` validated
+- ✅ README walkthrough polish — root and generated READMEs now show the
+  validated LM Studio, CLI, and server flows
 - ⬜ Model exploration — try `google/gemma-4-12b`, `google/gemma-4-26b-a4b` (`POCKET_MODEL=… .\lmstudio.cmd`)
-- ⬜ Final README walkthrough polish
 
 ---
 
@@ -117,7 +118,7 @@ The project is **complete** when every item below is implemented **and** demonst
 
 ## Remaining work, prioritized
 
-1. **Phase 6 — polish** *(interactive use, README walkthrough, CLI UX, report text)*
+1. **Optional model exploration** — try other local models and record trade-offs.
 
 > Phases 4 (Server & Studio), 3 (middleware + structured output), 2 (semantic search + `DeltaChannel`), and 5 (Postgres, caching, stream projection) are self-verified.
 

@@ -1734,14 +1734,27 @@ A foundations-first LangGraph agent built incrementally (M0-M14) plus a
 ## Model modes
 Runs in deterministic **mock mode** with no API keys (verifies all wiring:
 the agent<->tools cycle, SQLite persistence, HITL interrupts, streaming).
-Set `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` (or `POCKET_USE_OLLAMA=1`) for real
-answers and the `create_agent` track.
+For local real answers, use LM Studio with the validated model:
+`qwen/qwen3.5-9b`, `ctx=4096`, `gpu=max`, `parallel=1`. The repo root
+`lmstudio.cmd` launcher applies those defaults through `scripts/overnight_lmstudio.sh`.
+Provider keys also work: set `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` (or
+`POCKET_USE_OLLAMA=1`) for real answers and the `create_agent` track.
 
 ## Run
-```bash
+```powershell
 python verify_milestones.py     # re-run the milestone self-tests -> BUILD_REPORT.md
 pytest -q                       # unit tests (tools + routing)
 python -m pocket_agent.cli      # interactive chat
+```
+
+CLI prompts validated manually:
+```text
+what is 1234 * 5678?
+my name is Ada
+what is my name?
+save this note: LangGraph state is checkpointed
+y
+read my notes
 ```
 
 ## Server / Studio (section 8)
@@ -1749,9 +1762,10 @@ python -m pocket_agent.cli      # interactive chat
 `pocket_agent_hitl` (human-approval gate on `save_note`). The dev server
 supplies its own persistence, so the graphs are compiled without a checkpointer
 (HITL `interrupt()` still works — the server provides the checkpointer at run time).
-```bash
+```powershell
+$env:PYTHONIOENCODING='utf-8'      # avoids Windows console encoding issues
 pip install "langgraph-cli[inmem]"   # already installed by the builder
-langgraph dev                        # serves http://127.0.0.1:2024 + opens Studio
+langgraph dev --no-browser           # serves http://127.0.0.1:2024
 ```
 Drive the running server from Python via the SDK:
 ```python
@@ -1764,6 +1778,8 @@ for chunk in client.runs.stream(
         stream_mode="values"):
     print(chunk.data)
 ```
+
+See `docs/project/manual_validation.md` for the recorded CLI + server walkthrough.
 
 ## Middleware & structured output (create_agent track, §7+)
 `alt_create_agent/middleware_showcase.py` builds the same agent on the

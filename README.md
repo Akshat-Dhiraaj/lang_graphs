@@ -8,7 +8,25 @@ and reference material that explains it.
 ```powershell
 .\build.cmd --check   # regenerate generated files and syntax-check them
 .\build.cmd           # full build: install deps, run tests, verify milestones
+.\lmstudio.cmd        # load the validated local model, then run the full build
 .\scripts\overnight_system_run.ps1 -Hours 8 -RunBuildCheck -RunTests -RunMilestones
+```
+
+Manual CLI validation:
+
+```powershell
+cd .\pocket-agent
+$env:POCKET_USE_LMSTUDIO='1'
+$env:POCKET_MODEL='qwen/qwen3.5-9b'
+python -m pocket_agent.cli
+```
+
+Studio/server validation:
+
+```powershell
+cd .\pocket-agent
+$env:PYTHONIOENCODING='utf-8'
+langgraph dev --no-browser
 ```
 
 From Git Bash:
@@ -39,4 +57,6 @@ bash scripts/build_pocket_agent.sh
 - [Roadmap](docs/project/roadmap.md) tracks what is implemented and what remains.
 - [Overnight system run](docs/project/overnight_system_run.md) explains the
   long-running monitor/debug script.
+- [Manual validation](docs/project/manual_validation.md) records the CLI and
+  LangGraph server walkthrough.
 - [Docs index](docs/README.md) organizes the markdown knowledge base.
