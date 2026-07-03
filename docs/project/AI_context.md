@@ -177,6 +177,9 @@ Last live LM Studio + Postgres run: **16/16 PASS, 0 skips** with `qwen/qwen3.5-9
 unit tests with live Postgres: **20/20 PASS**.
 Manual CLI + LangGraph server validation passed on 2026-07-03; see
 `docs/project/manual_validation.md`.
+Model exploration found `meta-llama-3.1-8b-instruct` is a lighter full-pass
+fallback; keep `qwen/qwen3.5-9b` as the default because it has the broadest
+validation history in this repo.
 
 ## Gotchas worth remembering
 

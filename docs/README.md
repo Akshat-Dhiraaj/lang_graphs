@@ -12,6 +12,8 @@ The markdown files are grouped by how they should be used.
   overnight monitor command, and log layout.
 - [lmstudio_live_validation.md](project/lmstudio_live_validation.md) — verified
   local model, load settings, and live verifier result.
+- [model_exploration.md](project/model_exploration.md) — local model comparison
+  and recommendation.
 - [postgres_live_validation.md](project/postgres_live_validation.md) — live M12
   Postgres validation result, Docker command, and connection-lifetime fix.
 - [manual_validation.md](project/manual_validation.md) — CLI and LangGraph
