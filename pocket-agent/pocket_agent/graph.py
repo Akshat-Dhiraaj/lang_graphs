@@ -5,7 +5,7 @@ route_after_agent(state) is exposed module-level so it can be unit-tested
 without constructing a model.
 """
 from langgraph.graph import StateGraph, START, END
-from langchain_core.messages import ToolMessage, SystemMessage
+from langchain_core.messages import AIMessage, ToolMessage, SystemMessage
 
 from .state import State
 from .tools import ALL_TOOLS
@@ -13,6 +13,16 @@ from .model import build_model, mock_respond, SYSTEM_PROMPT
 
 TOOLS = ALL_TOOLS
 _TOOLS_BY_NAME = {t.name: t for t in TOOLS}
+
+
+def ensure_final_content(msg, prior_messages):
+    """Use the latest tool result when a model emits an empty final answer."""
+    if (not getattr(msg, "tool_calls", None)
+            and not str(getattr(msg, "content", "")).strip()
+            and prior_messages
+            and getattr(prior_messages[-1], "type", "") == "tool"):
+        return AIMessage(content=str(prior_messages[-1].content))
+    return msg
 
 
 def route_after_agent(state):
@@ -34,6 +44,7 @@ def build_graph(checkpointer=None, store=None, hitl=False):
             if not msgs or getattr(msgs[0], "type", "") != "system":
                 msgs = [SystemMessage(content=SYSTEM_PROMPT)] + msgs
             msg = model.invoke(msgs)
+            msg = ensure_final_content(msg, msgs)
         return {"messages": [msg]}
 
     def tool_node(state):

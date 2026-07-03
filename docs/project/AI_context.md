@@ -175,6 +175,8 @@ Last keyless mock run: **15/15 PASS, 1 skip** (ALT) + **19/20 unit tests**
 (1 skipped live Postgres test because `POCKET_POSTGRES_URI` was not set).
 Last live LM Studio + Postgres run: **16/16 PASS, 0 skips** with `qwen/qwen3.5-9b`;
 unit tests with live Postgres: **20/20 PASS**.
+Manual CLI + LangGraph server validation passed on 2026-07-03; see
+`docs/project/manual_validation.md`.
 
 ## Gotchas worth remembering
 
@@ -191,6 +193,9 @@ unit tests with live Postgres: **20/20 PASS**.
   keep `POCKET_POSTGRES_SETUP=1` explicit because it creates/migrates tables. Use
   `open_postgres_graph(...)` as a context manager so saver/store handles remain open
   while the graph runs.
+- Local OpenAI-compatible models can emit an empty final assistant message after a
+  valid tool result. `ensure_final_content(...)` falls back to the latest tool result
+  so user-facing CLI/server responses do not appear blank.
 - `StreamChannel` only buffers side-channel items after a consumer subscribes. The M14
   demo uses a named channel so progress is also visible on the main stream as
   `custom:progress`.

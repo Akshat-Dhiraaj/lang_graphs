@@ -95,10 +95,12 @@ The project is **complete** when every item below is implemented **and** demonst
 - ✅ **M14** Custom `StreamTransformer` projection — `pocket_agent/stream_projection.py` projects custom node progress into a named `custom:progress` v3 stream channel.
 
 ### Phase 6 — Polish & hands-on 🟡
-- ⬜ Drive the agent interactively — `python -m pocket_agent.cli`
+- ✅ Drive the agent interactively — `python -m pocket_agent.cli`; calculator,
+  memory, HITL approval, and note readback validated
+- ✅ Server/Studio manual validation — `langgraph dev --no-browser`,
+  `langgraph-sdk`, `pocket_agent`, and `pocket_agent_hitl` validated
 - ⬜ Model exploration — try `google/gemma-4-12b`, `google/gemma-4-26b-a4b` (`POCKET_MODEL=… .\lmstudio.cmd`)
-- ⬜ Real README + pinned `pyproject.toml`; `git init` with per-milestone commits
-- ⬜ Fix the auto-report "Next steps" text (stale — still says "provide a model" though LM Studio is in use)
+- ⬜ Final README walkthrough polish
 
 ---
 
