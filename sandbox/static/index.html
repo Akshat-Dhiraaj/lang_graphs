@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pocket Agent Sandbox</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <script defer src="/static/app.js"></script>
+</head>
+<body>
+  <header>
+    <div class="wrap topbar">
+      <div>
+        <h1>Pocket Agent Sandbox</h1>
+        <p class="sub">
+          Local-first LangGraph learning project: graph mechanics, tool use,
+          memory, streaming, HITL, persistence, Server/Studio, and provider experiments.
+        </p>
+      </div>
+      <div class="actions">
+        <button id="refreshStatus" type="button">Refresh</button>
+        <button id="checkModel" type="button">Check Model</button>
+        <button id="loadDefaultModel" type="button">Load Default Model</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap page">
+    <section id="status" class="status" aria-live="polite"></section>
+
+    <section class="grid">
+      <div class="stack">
+        <section class="panel">
+          <h2>Objective</h2>
+          <p>
+            Build and verify a compact LangGraph foundations project that explains
+            core primitives by running them locally, not by hiding them behind a product shell.
+          </p>
+        </section>
+
+        <section class="panel">
+          <h2>What It Can Do</h2>
+          <ul class="clean">
+            <li>Run a hand-built ReAct graph with actual local tools.</li>
+            <li>Keep thread memory through a checkpointer.</li>
+            <li>Stream graph progress into this page.</li>
+            <li>Pause before a side effect and resume from browser approval.</li>
+            <li>Browse local project reference docs without model recall.</li>
+            <li>Talk to LM Studio or user-supplied provider keys.</li>
+          </ul>
+        </section>
+
+        <section class="panel docs-panel">
+          <div class="section-head">
+            <h2>Docs / Reference</h2>
+          </div>
+          <div id="docList" class="doc-list"></div>
+          <h3 id="docTitle">Reference</h3>
+          <p id="docMeta" class="meta"></p>
+          <pre id="docView" class="doc-view"></pre>
+        </section>
+      </div>
+
+      <div class="stack">
+        <section class="panel sandbox-panel">
+          <div class="section-head">
+            <h2>Sandbox Chat</h2>
+            <span id="threadLabel" class="meta"></span>
+          </div>
+
+          <div class="form-grid">
+            <label>
+              Mode
+              <select id="mode">
+                <option value="graph">Pocket Agent graph</option>
+                <option value="provider">Direct provider chat</option>
+              </select>
+            </label>
+            <label>
+              Provider
+              <select id="provider">
+                <option value="lmstudio">LM Studio local</option>
+                <option value="openai">OpenAI / GPT</option>
+                <option value="anthropic">Anthropic / Claude</option>
+                <option value="gemini">Google Gemini</option>
+                <option value="custom-openai">Other OpenAI-compatible</option>
+              </select>
+            </label>
+            <label>
+              Base URL
+              <input id="baseUrl" type="text" placeholder="http://localhost:1234/v1">
+            </label>
+            <label>
+              Model
+              <input id="model" type="text" placeholder="qwen/qwen3.5-9b">
+            </label>
+            <label class="span-2">
+              API key
+              <input id="apiKey" type="password" autocomplete="off" placeholder="Optional for LM Studio">
+            </label>
+          </div>
+
+          <div class="examples">
+            <button type="button" data-prompt="What can this project demonstrate?">Project Summary</button>
+            <button type="button" data-prompt="what is langgraph">LangGraph</button>
+            <button type="button" data-prompt="What is 47 * 89? Use the calculator tool.">Calculator</button>
+            <button type="button" data-prompt="Save a note with exactly this text: sandbox checkpoint">Save Note</button>
+          </div>
+
+          <label>
+            Prompt
+            <textarea id="prompt" rows="5" placeholder="Ask a project, graph, tool, or provider question"></textarea>
+          </label>
+
+          <div class="actions split">
+            <div class="actions">
+              <button id="runPrompt" type="button">Run</button>
+              <button id="copyLast" type="button">Copy Output</button>
+              <button id="resetThread" type="button">Reset Thread</button>
+            </div>
+            <span id="chatStatus" class="meta" aria-live="polite"></span>
+          </div>
+
+          <div id="transcript" class="transcript" aria-live="polite"></div>
+        </section>
+
+        <section class="panel tools-panel">
+          <h2>Tools</h2>
+          <div class="tool-grid">
+            <label>
+              Calculator
+              <input id="calcExpression" type="text" value="6 * 7">
+            </label>
+            <div class="actions align-end">
+              <button id="runCalculator" type="button">Calculate</button>
+              <button id="runTime" type="button">Get Time</button>
+            </div>
+            <label class="span-2">
+              Note
+              <textarea id="noteText" rows="3" placeholder="A note saved by the sandbox"></textarea>
+            </label>
+            <div class="actions span-2">
+              <button id="saveNoteTool" type="button">Save Note</button>
+              <button id="readNotesTool" type="button">Read Notes</button>
+            </div>
+          </div>
+          <pre id="toolResult" class="result-box"></pre>
+        </section>
+
+        <section class="panel hitl-panel">
+          <h2>HITL Save Demo</h2>
+          <label>
+            Note waiting for approval
+            <textarea id="hitlNote" rows="3">sandbox human approval checkpoint</textarea>
+          </label>
+          <div class="actions">
+            <button id="startHitl" type="button">Start HITL Save</button>
+            <button id="approveHitl" type="button" disabled>Approve</button>
+            <button id="rejectHitl" type="button" disabled>Reject</button>
+          </div>
+          <pre id="hitlResult" class="result-box"></pre>
+        </section>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

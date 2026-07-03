@@ -24,7 +24,8 @@ tree is its *output*.
 To change any generated file, edit its heredoc inside `scripts/build_pocket_agent.sh`, then
 regenerate. Hand-edits are overwritten on the next build. (Hand-maintained files that
 are NOT generated: `docs/project/*`, `docs/plans/*`, `docs/reference/*`,
-`scripts/*.sh`, `examples/*`, and the root `*.cmd` / `*.ps1` launchers.)
+`scripts/*.sh`, `examples/*`, `sandbox/*`, and the root `*.cmd` / `*.ps1`
+launchers.)
 
 ## How to build, run, and verify
 
@@ -97,9 +98,15 @@ exit code; everything else is `required=False` (informational, never blocks).
 
 ```
 build.cmd / lmstudio.cmd       # Windows build + LM Studio launchers
-launch_sandbox.ps1             # localhost project overview + provider sandbox
+launch_sandbox.ps1             # single root entry point for localhost sandbox
 README.md                      # repo map + common commands
 .gitignore
+sandbox/                       # hand-maintained localhost app behind launcher
+├── server.py                  # stdlib HTTP API: graph, tools, HITL, docs, providers
+└── static/
+    ├── index.html             # browser markup
+    ├── styles.css             # browser styles
+    └── app.js                 # browser state and interactions
 docs/
 ├── README.md                  # documentation index
 ├── project/

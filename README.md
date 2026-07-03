@@ -46,6 +46,7 @@ bash scripts/build_pocket_agent.sh
 | `scripts/overnight_lmstudio.sh` | LM Studio model provisioning plus full build. |
 | `scripts/overnight_system_run.ps1` | 6-8 hour Windows system monitor plus optional build/test/milestone loop. |
 | `build.cmd`, `lmstudio.cmd`, `launch_sandbox.ps1` | Windows launchers for build, LM Studio validation, and the local web sandbox. |
+| `sandbox/` | Hand-maintained localhost sandbox server and browser assets. |
 | `docs/project/` | Living project context and roadmap. |
 | `docs/plans/` | Original project plan retained for reference. |
 | `docs/reference/` | Fact-checked LangGraph information bank. |

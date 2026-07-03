@@ -37,5 +37,6 @@ The markdown files are grouped by how they should be used.
 `pocket-agent/` is generated output. Durable code changes inside that generated
 project belong in `scripts/build_pocket_agent.sh` first, then the generated tree
 should be regenerated and verified. Root launchers and `docs/` are hand
-maintained.
+maintained. The localhost sandbox app in `sandbox/` is also hand maintained and
+is launched by the root `launch_sandbox.ps1` entry point.
 
