@@ -2,11 +2,54 @@ const $ = (id) => document.getElementById(id);
 
 const state = {
   docs: [],
+  currentDocId: "",
   messages: [],
+  timeline: [],
+  toolTrace: [],
   lastOutput: "",
   threadId: newThreadId(),
   hitlThreadId: "",
   busy: false,
+};
+
+const CHAT_HISTORY_KEY = "pocket-agent-chat-history";
+
+const PROVIDER_PRESETS = {
+  "lmstudio-default": {
+    provider: "lmstudio",
+    baseUrl: "http://localhost:1234/v1",
+    model: "qwen/qwen3.5-9b",
+    temperature: 0.2,
+    maxTokens: 900,
+  },
+  "openai-chat-mini": {
+    provider: "openai",
+    baseUrl: "",
+    model: "gpt-5.4-mini",
+    temperature: 0.2,
+    maxTokens: 900,
+  },
+  "anthropic-haiku": {
+    provider: "anthropic",
+    baseUrl: "",
+    model: "claude-haiku-4-5",
+    temperature: 0.2,
+    maxTokens: 900,
+  },
+  "gemini-flash": {
+    provider: "gemini",
+    baseUrl: "",
+    model: "gemini-flash-latest",
+    temperature: 0.2,
+    maxTokens: 900,
+  },
+  "custom-openai": {
+    provider: "custom-openai",
+    baseUrl: "http://localhost:1234/v1",
+    model: "",
+    temperature: 0.2,
+    maxTokens: 900,
+  },
 };
 
 function newThreadId() {
@@ -113,18 +156,161 @@ function setMessageText(item, text) {
   renderTranscript();
 }
 
+function addTimeline(kind, text) {
+  state.timeline.push({
+    kind,
+    text: String(text || ""),
+    at: new Date().toLocaleTimeString(),
+  });
+  renderTimeline();
+}
+
+function renderTimeline() {
+  const target = $("timeline");
+  target.innerHTML = "";
+  for (const item of state.timeline) {
+    const row = document.createElement("li");
+    const label = document.createElement("strong");
+    label.textContent = `${item.kind}: `;
+    row.append(label, `${item.text} (${item.at})`);
+    target.appendChild(row);
+  }
+}
+
+function addToolTrace(phase, name, detail = "") {
+  state.toolTrace.push({
+    phase,
+    name: name || "tool",
+    detail: String(detail || ""),
+    at: new Date().toLocaleTimeString(),
+  });
+  renderToolTrace();
+}
+
+function renderToolTrace() {
+  const target = $("toolTrace");
+  target.innerHTML = "";
+  for (const item of state.toolTrace) {
+    const row = document.createElement("div");
+    row.className = "trace-item";
+    const label = document.createElement("strong");
+    label.textContent = `${item.phase}: ${item.name}`;
+    row.append(label);
+    if (item.detail) row.append(` - ${item.detail}`);
+    row.append(` (${item.at})`);
+    target.appendChild(row);
+  }
+}
+
+function resetRunInspector() {
+  state.timeline = [];
+  state.toolTrace = [];
+  renderTimeline();
+  renderToolTrace();
+}
+
+function chatSnapshot() {
+  return {
+    version: 1,
+    savedAt: new Date().toISOString(),
+    threadId: state.threadId,
+    messages: state.messages,
+    timeline: state.timeline,
+    toolTrace: state.toolTrace,
+    lastOutput: state.lastOutput,
+  };
+}
+
+function setTemporaryStatus(text) {
+  $("chatStatus").textContent = text;
+  setTimeout(() => {
+    if (!state.busy && $("chatStatus").textContent === text) {
+      $("chatStatus").textContent = "";
+    }
+  }, 1400);
+}
+
+function saveChatHistory() {
+  try {
+    localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(chatSnapshot()));
+    setTemporaryStatus("Chat saved");
+  } catch (err) {
+    setTemporaryStatus(`Save failed: ${err.message}`);
+  }
+}
+
+function loadChatHistory() {
+  try {
+    const raw = localStorage.getItem(CHAT_HISTORY_KEY);
+    if (!raw) {
+      setTemporaryStatus("No saved chat");
+      return;
+    }
+    const saved = JSON.parse(raw);
+    state.threadId = saved.threadId || newThreadId();
+    state.messages = Array.isArray(saved.messages) ? saved.messages : [];
+    state.timeline = Array.isArray(saved.timeline) ? saved.timeline : [];
+    state.toolTrace = Array.isArray(saved.toolTrace) ? saved.toolTrace : [];
+    state.lastOutput = saved.lastOutput || "";
+    updateThreadLabel();
+    renderTranscript();
+    renderTimeline();
+    renderToolTrace();
+    setTemporaryStatus("Saved chat loaded");
+  } catch (err) {
+    setTemporaryStatus(`Load failed: ${err.message}`);
+  }
+}
+
+function exportChatHistory() {
+  const snapshot = chatSnapshot();
+  const blob = new Blob([JSON.stringify(snapshot, null, 2)], {
+    type: "application/json",
+  });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `pocket-agent-chat-${snapshot.threadId}.json`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+  setTemporaryStatus("Chat exported");
+}
+
+function applyPreset(id, status = null) {
+  const preset = PROVIDER_PRESETS[id] || PROVIDER_PRESETS["lmstudio-default"];
+  $("providerPreset").value = id;
+  $("provider").value = preset.provider;
+  $("baseUrl").value = preset.baseUrl;
+  $("model").value = preset.model;
+  $("temperature").value = preset.temperature;
+  $("maxTokens").value = preset.maxTokens;
+  providerDefaults(status);
+}
+
+function presetForProvider(provider) {
+  return Object.entries(PROVIDER_PRESETS).find(([, preset]) => preset.provider === provider)?.[0] || "custom-openai";
+}
+
 function providerDefaults(status = null) {
   const provider = $("provider").value;
   if (provider === "lmstudio") {
     $("baseUrl").value = status?.lmstudio?.base_url || $("baseUrl").value || "http://localhost:1234/v1";
     $("model").value = status?.lmstudio?.model || status?.lmstudio?.default_model || $("model").value || "qwen/qwen3.5-9b";
-  } else if (provider === "openai" && !$("model").value) {
-    $("model").value = "gpt-4o-mini";
-  } else if (provider === "anthropic" && !$("model").value) {
-    $("model").value = "claude-3-5-haiku-latest";
-  } else if (provider === "gemini" && !$("model").value) {
-    $("model").value = "gemini-1.5-flash";
   }
+}
+
+function chatSettingsPayload(prompt) {
+  return {
+    provider: $("provider").value,
+    baseUrl: $("baseUrl").value.trim(),
+    model: $("model").value.trim(),
+    apiKey: $("apiKey").value.trim(),
+    temperature: Number($("temperature").value || 0.2),
+    maxTokens: Number.parseInt($("maxTokens").value || "900", 10),
+    prompt,
+  };
 }
 
 async function refreshStatus() {
@@ -158,10 +344,24 @@ async function loadDocs() {
   }
 }
 
+function docMatchesSearch(doc, query) {
+  if (!query) return true;
+  const haystack = [
+    doc.title,
+    doc.path,
+    doc.description,
+    doc.content,
+  ].join("\n").toLowerCase();
+  return haystack.includes(query);
+}
+
 function renderDocButtons() {
   const target = $("docList");
   target.innerHTML = "";
-  for (const doc of state.docs) {
+  const query = ($("docSearch")?.value || "").trim().toLowerCase();
+  const docs = state.docs.filter((doc) => docMatchesSearch(doc, query));
+  $("docCount").textContent = `${docs.length} of ${state.docs.length} docs`;
+  for (const doc of docs) {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.textContent = doc.title;
@@ -169,11 +369,19 @@ function renderDocButtons() {
     btn.addEventListener("click", () => selectDoc(doc.id));
     target.appendChild(btn);
   }
+  if (docs.length && !docs.some((doc) => doc.id === state.currentDocId)) {
+    selectDoc(docs[0].id);
+  } else if (!docs.length) {
+    $("docTitle").textContent = "No matching docs";
+    $("docMeta").textContent = "";
+    $("docView").textContent = "Try a different search term.";
+  }
 }
 
 function selectDoc(id) {
   const doc = state.docs.find((item) => item.id === id);
   if (!doc) return;
+  state.currentDocId = id;
   for (const btn of $("docList").querySelectorAll("button")) {
     btn.classList.toggle("active", btn.dataset.doc === id);
   }
@@ -182,14 +390,12 @@ function selectDoc(id) {
   $("docView").textContent = doc.content || "";
 }
 
+function filterDocs() {
+  renderDocButtons();
+}
+
 async function runDirectChat(prompt, assistantMsg) {
-  const payload = {
-    provider: $("provider").value,
-    baseUrl: $("baseUrl").value.trim(),
-    model: $("model").value.trim(),
-    apiKey: $("apiKey").value.trim(),
-    prompt,
-  };
+  const payload = chatSettingsPayload(prompt);
   const data = await fetchJson("/api/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -200,7 +406,14 @@ async function runDirectChat(prompt, assistantMsg) {
   state.lastOutput = text;
 }
 
+function showChatError(assistantMsg, err) {
+  const text = `Error: ${err.message || err}`;
+  setMessageText(assistantMsg, text);
+  state.lastOutput = text;
+}
+
 async function runGraphStream(prompt, assistantMsg) {
+  resetRunInspector();
   const res = await fetch("/api/agent/stream", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -239,58 +452,65 @@ function handleStreamEvent(event, assistantMsg, progress) {
     updateThreadLabel();
   }
   if (event.event === "start") {
+    addTimeline("start", `graph started (${event.mode})`);
     setMessageText(assistantMsg, `graph started (${event.mode})`);
   } else if (event.event === "update") {
+    addTimeline(event.kind || "update", event.text || "");
+    if (event.kind === "tool_call") {
+      addToolTrace("requested", (event.text || "").replace("agent requested ", ""), "");
+    } else if (event.kind === "tool") {
+      addToolTrace("result", "tool", event.text || "");
+    }
     progress.push(event.text);
     setMessageText(assistantMsg, progress.join("\n"));
   } else if (event.event === "final") {
     const text = event.text || "(empty response)";
+    addTimeline("final", text);
     setMessageText(assistantMsg, text);
     state.lastOutput = text;
   } else if (event.event === "error") {
+    addTimeline("error", event.error || "stream error");
     throw new Error(event.error || "stream error");
   }
 }
 
-async function runPrompt() {
-  const prompt = $("prompt").value.trim();
+async function runPromptText(prompt, mode = $("mode").value) {
   if (!prompt) return;
+  $("mode").value = mode;
   appendMessage("user", prompt);
   const assistantMsg = appendMessage("assistant", "");
   setBusy(true, "Running...");
   try {
-    if ($("mode").value === "graph") {
+    if (mode === "graph") {
       await runGraphStream(prompt, assistantMsg);
     } else {
       await runDirectChat(prompt, assistantMsg);
     }
   } catch (err) {
-    setMessageText(assistantMsg, `Error: ${err.message}`);
-    state.lastOutput = assistantMsg.text;
+    showChatError(assistantMsg, err);
   } finally {
     setBusy(false);
   }
 }
 
+async function runPrompt() {
+  await runPromptText($("prompt").value.trim());
+}
+
 async function copyLast() {
   if (!state.lastOutput) return;
   await navigator.clipboard.writeText(state.lastOutput);
-  $("chatStatus").textContent = "Copied";
-  setTimeout(() => {
-    if (!state.busy) $("chatStatus").textContent = "";
-  }, 1200);
+  setTemporaryStatus("Copied");
 }
 
 function resetThread() {
   state.threadId = newThreadId();
   state.messages = [];
+  resetRunInspector();
   state.lastOutput = "";
   renderTranscript();
   updateThreadLabel();
-  $("chatStatus").textContent = "Thread reset";
-  setTimeout(() => {
-    if (!state.busy) $("chatStatus").textContent = "";
-  }, 1200);
+  setTemporaryStatus("Thread reset");
 }
 
 async function callTool(name, args = {}) {
@@ -301,6 +521,8 @@ async function callTool(name, args = {}) {
   });
   const text = `${data.tool}: ${data.result}`;
   $("toolResult").textContent = text;
+  addTimeline("tool", text);
+  addToolTrace("direct", data.tool, data.result);
   appendMessage("tool", text);
   state.lastOutput = text;
 }
@@ -332,6 +554,8 @@ async function startHitl() {
     state.hitlThreadId = data.thread_id || "";
     $("hitlResult").textContent = JSON.stringify(data, null, 2);
     setHitlPending(Boolean(data.paused));
+    addTimeline(data.paused ? "hitl paused" : "hitl finished", data.text || "");
+    addToolTrace("pending", "save_note", text);
     appendMessage("tool", data.text || "HITL started");
   } catch (err) {
     $("hitlResult").textContent = `Error: ${err.message}`;
@@ -348,6 +572,8 @@ async function resumeHitl(approve) {
       body: JSON.stringify({ threadId: state.hitlThreadId, approve }),
     });
     $("hitlResult").textContent = JSON.stringify(data, null, 2);
+    addTimeline(approve ? "hitl approved" : "hitl rejected", data.text || "");
+    addToolTrace(approve ? "approved" : "rejected", "save_note", data.note || "");
     appendMessage("tool", data.text || (approve ? "Approved" : "Rejected"));
     state.lastOutput = data.text || "";
   } catch (err) {
@@ -355,6 +581,42 @@ async function resumeHitl(approve) {
   } finally {
     state.hitlThreadId = "";
     setHitlPending(false);
+  }
+}
+
+function setDemoBusy(value) {
+  for (const btn of document.querySelectorAll("[data-demo]")) {
+    btn.disabled = value;
+  }
+}
+
+async function runDemoScript(name) {
+  setDemoBusy(true);
+  try {
+    if (name === "memory") {
+      resetThread();
+      $("prompt").value = "My name is Ada.";
+      await runPromptText("My name is Ada.", "graph");
+      $("prompt").value = "What is my name?";
+      await runPromptText("What is my name?", "graph");
+      setTemporaryStatus("Memory demo complete");
+    } else if (name === "tools") {
+      $("prompt").value = "What is 18 * 24? Use the calculator tool.";
+      await runPromptText("What is 18 * 24? Use the calculator tool.", "graph");
+      setTemporaryStatus("Tools demo complete");
+    } else if (name === "hitl") {
+      $("hitlNote").value = "demo script HITL note";
+      await startHitl();
+      setTemporaryStatus("HITL demo paused");
+    } else if (name === "streaming") {
+      $("prompt").value = "What is 123 * 4? Use the calculator tool.";
+      await runPromptText("What is 123 * 4? Use the calculator tool.", "graph");
+      setTemporaryStatus("Streaming demo complete");
+    }
+  } catch (err) {
+    setTemporaryStatus(`Demo failed: ${err.message}`);
+  } finally {
+    setDemoBusy(false);
   }
 }
 
@@ -378,7 +640,9 @@ function wireEvents() {
   $("refreshStatus").addEventListener("click", refreshStatus);
   $("checkModel").addEventListener("click", refreshStatus);
   $("loadDefaultModel").addEventListener("click", loadDefaultModel);
-  $("provider").addEventListener("change", () => providerDefaults());
+  $("docSearch").addEventListener("input", filterDocs);
+  $("providerPreset").addEventListener("change", () => applyPreset($("providerPreset").value));
+  $("provider").addEventListener("change", () => applyPreset(presetForProvider($("provider").value)));
   $("runPrompt").addEventListener("click", runPrompt);
   $("prompt").addEventListener("keydown", (event) => {
     if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
@@ -386,12 +650,18 @@ function wireEvents() {
     }
   });
   $("copyLast").addEventListener("click", copyLast);
+  $("saveChat").addEventListener("click", saveChatHistory);
+  $("loadChat").addEventListener("click", loadChatHistory);
+  $("exportChat").addEventListener("click", exportChatHistory);
   $("resetThread").addEventListener("click", resetThread);
   for (const btn of document.querySelectorAll("[data-prompt]")) {
     btn.addEventListener("click", () => {
       $("prompt").value = btn.dataset.prompt || "";
       $("prompt").focus();
     });
+  }
+  for (const btn of document.querySelectorAll("[data-demo]")) {
+    btn.addEventListener("click", () => runDemoScript(btn.dataset.demo || ""));
   }
   $("runCalculator").addEventListener("click", () => {
     guardedToolCall("calculator", { expression: $("calcExpression").value.trim() });
@@ -408,6 +678,7 @@ function wireEvents() {
 
 initTheme();
 wireEvents();
+applyPreset("lmstudio-default");
 updateThreadLabel();
 setHitlPending(false);
 refreshStatus();

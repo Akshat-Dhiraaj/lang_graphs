@@ -44,7 +44,8 @@ Useful options:
   and LM Studio availability.
 - Docs/reference panel that reads local markdown files directly, so users can
   browse project capabilities, roadmap state, build results, and LangGraph
-  reference notes without asking the model.
+  reference notes without asking the model. The panel includes browser-side
+  search/filter over titles, paths, descriptions, and loaded document content.
 - LM Studio controls:
   - **Check Model** refreshes the local model state.
   - **Load Default Model** loads the project default model using the same
@@ -55,14 +56,25 @@ Useful options:
 - Sandbox area with two modes:
   - **Pocket Agent graph**: imports and runs the repo's graph locally.
   - **Direct provider chat**: calls the selected provider API directly.
+- Provider presets fill editable defaults for LM Studio, OpenAI, Anthropic,
+  Gemini, and custom OpenAI-compatible servers. The settings drawer exposes
+  provider, base URL, model id, temperature, max tokens, and API key.
 - Conversation UI with browser-side message history, loading state, copy-last
   action, and thread reset. Graph mode keeps one thread id until reset so memory
   behavior is easier to observe.
+- Chat history can be saved to browser-local storage, loaded back into the same
+  browser, or exported as a JSON file for sharing/debugging.
 - Dark/light theme toggle in the header. The default theme is dark mode, and the
   browser remembers the last selected theme locally.
+- Mobile layout rules keep header actions, chat controls, examples, docs
+  filters, transcript messages, timeline, and tool trace from overflowing on
+  narrow viewports.
 - Graph-mode chat streams through `/api/agent/stream` using newline-delimited
   JSON. The browser shows graph progress updates while the run is active, then
   replaces the pending assistant message with the final answer.
+- The chat panel includes a graph timeline and tool trace. Graph streaming,
+  direct tool calls, and HITL approve/reject actions append concise inspection
+  events there.
 - Direct tool UI for the repo's actual local tools:
   - calculator
   - current time
@@ -80,6 +92,9 @@ Useful options:
 - Basic "what is LangGraph?" prompts also return a deterministic local answer,
   so the sandbox remains useful when LM Studio is offline and graph mode falls
   back to mock mode.
+- Demo script buttons drive real sandbox flows for memory, tools, HITL pause,
+  and graph streaming. They reuse the same graph/tool/HITL functions as manual
+  use.
 
 ## Provider Paths
 
@@ -96,6 +111,10 @@ library HTTP client.
 
 API keys are only forwarded to the localhost server for the current request and
 are not written to disk by the launcher or sandbox server.
+
+Provider/model failures are normalized into actionable messages that point at
+likely causes: API key, base URL, model id, request format, timeout, or local
+server availability.
 
 The LM Studio load action shells out to the local `lms` CLI. If the default
 model is already loaded with the expected settings, it is a no-op. If the

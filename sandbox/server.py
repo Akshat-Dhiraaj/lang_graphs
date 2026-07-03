@@ -189,6 +189,56 @@ def http_json(
         raise RuntimeError(f"HTTP {exc.code}: {body[:1800]}") from exc
     except urllib.error.URLError as exc:
         raise RuntimeError(str(exc.reason)) from exc
+    except TimeoutError as exc:
+        raise RuntimeError("request timed out") from exc
+
+
+def provider_label(provider: str) -> str:
+    return {
+        "lmstudio": "LM Studio",
+        "custom-openai": "OpenAI-compatible provider",
+        "openai": "OpenAI",
+        "anthropic": "Anthropic",
+        "gemini": "Gemini",
+    }.get(provider, provider or "provider")
+
+
+def provider_base_url(provider: str, base_url: str) -> str:
+    if base_url:
+        return base_url
+    return {
+        "lmstudio": LMSTUDIO_BASE,
+        "custom-openai": LMSTUDIO_BASE,
+        "openai": "https://api.openai.com/v1",
+        "anthropic": "https://api.anthropic.com/v1",
+        "gemini": "https://generativelanguage.googleapis.com/v1beta",
+    }.get(provider, "")
+
+
+def provider_error_message(provider: str, exc: Exception, base_url: str, model: str) -> str:
+    raw = str(exc)
+    lowered = raw.lower()
+    label = provider_label(provider)
+    hint = "Check the provider settings and try again."
+
+    if "connection refused" in lowered or "no connection" in lowered or "actively refused" in lowered:
+        hint = f"Could not reach {label}. Check that the server/base URL is running."
+    elif "timed out" in lowered or "timeout" in lowered:
+        hint = f"{label} did not answer before the timeout. The model may still be loading."
+    elif "http 401" in lowered or "http 403" in lowered or "unauthorized" in lowered:
+        hint = f"{label} rejected the request. Check the API key and account access."
+    elif "http 404" in lowered or "not found" in lowered:
+        hint = f"{label} could not find the endpoint or model. Check the base URL and model id."
+    elif "http 400" in lowered:
+        hint = f"{label} rejected the request format. Check the model id and supported parameters."
+
+    target = []
+    if base_url:
+        target.append(f"base URL: {base_url}")
+    if model:
+        target.append(f"model: {model}")
+    target_text = f" ({'; '.join(target)})" if target else ""
+    return f"{label} request failed{target_text}. {hint} Details: {raw}"
 
 
 def first_lmstudio_model(base_url: str) -> str:
@@ -208,6 +258,8 @@ def openai_compat_chat(
     model: str,
     messages: list[dict[str, str]],
     api_key: str | None = None,
+    temperature: float = 0.2,
+    max_tokens: int = 900,
 ) -> tuple[str, dict[str, Any]]:
     headers = {"Content-Type": "application/json"}
     if api_key:
@@ -215,8 +267,8 @@ def openai_compat_chat(
     payload = {
         "model": model,
         "messages": messages,
-        "temperature": 0.2,
-        "max_tokens": 900,
+        "temperature": temperature,
+        "max_tokens": max_tokens,
     }
     data = http_json(base_url.rstrip("/") + "/chat/completions", payload, headers)
     choices = data.get("choices") or []
@@ -235,10 +287,10 @@ def openai_compat_chat(
     return text, data
 
 
-def anthropic_chat(model: str, prompt: str, api_key: str) -> tuple[str, dict[str, Any]]:
+def anthropic_chat(model: str, prompt: str, api_key: str, max_tokens: int = 900) -> tuple[str, dict[str, Any]]:
     payload = {
         "model": model,
-        "max_tokens": 900,
+        "max_tokens": max_tokens,
         "messages": [{"role": "user", "content": with_project_context(prompt)}],
     }
     headers = {
@@ -254,10 +306,22 @@ def anthropic_chat(model: str, prompt: str, api_key: str) -> tuple[str, dict[str
     return "\n".join(parts), data
 
 
-def gemini_chat(model: str, prompt: str, api_key: str) -> tuple[str, dict[str, Any]]:
+def gemini_chat(
+    model: str,
+    prompt: str,
+    api_key: str,
+    temperature: float = 0.2,
+    max_tokens: int = 900,
+) -> tuple[str, dict[str, Any]]:
     safe_model = urllib.parse.quote(model, safe="-_.~/")
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{safe_model}:generateContent"
-    payload = {"contents": [{"parts": [{"text": with_project_context(prompt)}]}]}
+    payload = {
+        "contents": [{"parts": [{"text": with_project_context(prompt)}]}],
+        "generationConfig": {
+            "temperature": temperature,
+            "maxOutputTokens": max_tokens,
+        },
+    }
     headers = {
         "Content-Type": "application/json",
         "x-goog-api-key": api_key,
@@ -272,12 +336,30 @@ def gemini_chat(model: str, prompt: str, api_key: str) -> tuple[str, dict[str, A
     return "\n".join(parts), data
 
 
+def bounded_float(value: Any, default: float, low: float, high: float) -> float:
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError):
+        parsed = default
+    return max(low, min(high, parsed))
+
+
+def bounded_int(value: Any, default: int, low: int, high: int) -> int:
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        parsed = default
+    return max(low, min(high, parsed))
+
+
 def chat(payload: dict[str, Any]) -> dict[str, Any]:
     provider = str(payload.get("provider") or "lmstudio").strip()
     prompt = str(payload.get("prompt") or "").strip()
     model = str(payload.get("model") or "").strip()
     api_key = str(payload.get("apiKey") or "").strip()
     base_url = str(payload.get("baseUrl") or "").strip()
+    temperature = bounded_float(payload.get("temperature"), 0.2, 0.0, 2.0)
+    max_tokens = bounded_int(payload.get("maxTokens"), 900, 1, 16384)
     if not prompt:
         raise ValueError("Prompt is required")
     if len(prompt) > MAX_PROMPT_CHARS:
@@ -292,39 +374,45 @@ def chat(payload: dict[str, Any]) -> dict[str, Any]:
         {"role": "user", "content": prompt},
     ]
 
-    if provider == "lmstudio":
-        base = (base_url or LMSTUDIO_BASE).rstrip("/")
-        selected = model or first_lmstudio_model(base) or os.environ.get("POCKET_MODEL", "local-model")
-        text, _raw = openai_compat_chat(base, selected, messages, api_key or "lm-studio")
-        return {"provider": "lmstudio", "model": selected, "text": normalize_project_answer(prompt, text)}
-    if provider == "custom-openai":
-        if not base_url:
-            raise ValueError("Base URL is required for an OpenAI-compatible provider")
-        if not model:
-            raise ValueError("Model is required for this provider")
-        text, _raw = openai_compat_chat(base_url, model, messages, api_key or None)
-        return {"provider": "custom-openai", "model": model, "text": normalize_project_answer(prompt, text)}
-    if provider == "openai":
-        if not api_key:
-            raise ValueError("OpenAI API key is required")
-        if not model:
-            raise ValueError("Enter an OpenAI model id")
-        text, _raw = openai_compat_chat("https://api.openai.com/v1", model, messages, api_key)
-        return {"provider": "openai", "model": model, "text": normalize_project_answer(prompt, text)}
-    if provider == "anthropic":
-        if not api_key:
-            raise ValueError("Anthropic API key is required")
-        if not model:
-            raise ValueError("Enter a Claude model id")
-        text, _raw = anthropic_chat(model, prompt, api_key)
-        return {"provider": "anthropic", "model": model, "text": normalize_project_answer(prompt, text)}
-    if provider == "gemini":
-        if not api_key:
-            raise ValueError("Gemini API key is required")
-        if not model:
-            raise ValueError("Enter a Gemini model id")
-        text, _raw = gemini_chat(model, prompt, api_key)
-        return {"provider": "gemini", "model": model, "text": normalize_project_answer(prompt, text)}
+    try:
+        if provider == "lmstudio":
+            base = (base_url or LMSTUDIO_BASE).rstrip("/")
+            selected = model or first_lmstudio_model(base) or os.environ.get("POCKET_MODEL", "local-model")
+            text, _raw = openai_compat_chat(base, selected, messages, api_key or "lm-studio", temperature, max_tokens)
+            return {"provider": "lmstudio", "model": selected, "text": normalize_project_answer(prompt, text)}
+        if provider == "custom-openai":
+            if not base_url:
+                raise ValueError("Base URL is required for an OpenAI-compatible provider")
+            if not model:
+                raise ValueError("Model is required for this provider")
+            text, _raw = openai_compat_chat(base_url, model, messages, api_key or None, temperature, max_tokens)
+            return {"provider": "custom-openai", "model": model, "text": normalize_project_answer(prompt, text)}
+        if provider == "openai":
+            if not api_key:
+                raise ValueError("OpenAI API key is required")
+            if not model:
+                raise ValueError("Enter an OpenAI model id")
+            text, _raw = openai_compat_chat("https://api.openai.com/v1", model, messages, api_key, temperature, max_tokens)
+            return {"provider": "openai", "model": model, "text": normalize_project_answer(prompt, text)}
+        if provider == "anthropic":
+            if not api_key:
+                raise ValueError("Anthropic API key is required")
+            if not model:
+                raise ValueError("Enter a Claude model id")
+            text, _raw = anthropic_chat(model, prompt, api_key, max_tokens)
+            return {"provider": "anthropic", "model": model, "text": normalize_project_answer(prompt, text)}
+        if provider == "gemini":
+            if not api_key:
+                raise ValueError("Gemini API key is required")
+            if not model:
+                raise ValueError("Enter a Gemini model id")
+            text, _raw = gemini_chat(model, prompt, api_key, temperature, max_tokens)
+            return {"provider": "gemini", "model": model, "text": normalize_project_answer(prompt, text)}
+    except ValueError:
+        raise
+    except Exception as exc:
+        active_base = provider_base_url(provider, base_url)
+        raise RuntimeError(provider_error_message(provider, exc, active_base, model)) from exc
     raise ValueError(f"Unknown provider: {provider}")
 
 

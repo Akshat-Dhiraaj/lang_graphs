@@ -210,6 +210,24 @@ label {
   margin-bottom: 12px;
 }
 
+.compact-grid {
+  margin-bottom: 10px;
+}
+
+.settings-drawer {
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 12px;
+  padding: 10px 0 0;
+}
+
+.settings-drawer summary {
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 12px;
+  margin-bottom: 10px;
+}
+
 .span-2 {
   grid-column: 1 / -1;
 }
@@ -260,11 +278,22 @@ label {
 }
 
 .doc-list,
-.examples {
+.examples,
+.demo-strip {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 12px;
+}
+
+.demo-strip {
+  align-items: center;
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+
+.doc-search {
+  margin-bottom: 10px;
 }
 
 .doc-list button.active {
@@ -303,6 +332,40 @@ label {
   padding: 12px;
 }
 
+.run-inspector {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  border-top: 1px solid var(--line);
+  margin-top: 12px;
+  padding-top: 12px;
+}
+
+.timeline,
+.trace-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+}
+
+.timeline {
+  list-style: none;
+}
+
+.timeline li,
+.trace-item {
+  border-left: 2px solid var(--line);
+  padding-left: 10px;
+  color: var(--muted);
+  word-break: break-word;
+}
+
+.timeline li strong,
+.trace-item strong {
+  color: var(--ink);
+}
+
 .message {
   display: grid;
   gap: 4px;
@@ -338,7 +401,8 @@ label {
 @media (max-width: 880px) {
   .grid,
   .form-grid,
-  .tool-grid {
+  .tool-grid,
+  .run-inspector {
     grid-template-columns: 1fr;
   }
 
@@ -349,5 +413,63 @@ label {
 
   .span-2 {
     grid-column: auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .wrap {
+    width: min(100vw - 20px, 1180px);
+  }
+
+  .topbar {
+    gap: 12px;
+  }
+
+  .topbar .actions,
+  .split .actions {
+    width: 100%;
+  }
+
+  .topbar .actions button,
+  .split .actions button {
+    flex: 1 1 130px;
+  }
+
+  .panel {
+    padding: 12px;
+  }
+
+  .page {
+    padding-top: 12px;
+  }
+
+  .message {
+    max-width: 100%;
+  }
+
+  .transcript {
+    max-height: 420px;
+  }
+
+  .doc-view,
+  .result-box {
+    max-height: 300px;
+  }
+}
+
+@media (max-width: 430px) {
+  h1 {
+    font-size: 22px;
+  }
+
+  button {
+    min-width: 0;
+  }
+
+  .topbar .actions button,
+  .split .actions button,
+  .examples button,
+  .doc-list button {
+    flex: 1 1 100%;
   }
 }

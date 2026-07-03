@@ -55,6 +55,11 @@
           <div class="section-head">
             <h2>Docs / Reference</h2>
           </div>
+          <label class="doc-search">
+            Search docs
+            <input id="docSearch" type="search" placeholder="Filter roadmap, context, build report...">
+          </label>
+          <p id="docCount" class="meta"></p>
           <div id="docList" class="doc-list"></div>
           <h3 id="docTitle">Reference</h3>
           <p id="docMeta" class="meta"></p>
@@ -69,7 +74,7 @@
             <span id="threadLabel" class="meta"></span>
           </div>
 
-          <div class="form-grid">
+          <div class="form-grid compact-grid">
             <label>
               Mode
               <select id="mode">
@@ -78,34 +83,66 @@
               </select>
             </label>
             <label>
-              Provider
-              <select id="provider">
-                <option value="lmstudio">LM Studio local</option>
-                <option value="openai">OpenAI / GPT</option>
-                <option value="anthropic">Anthropic / Claude</option>
-                <option value="gemini">Google Gemini</option>
-                <option value="custom-openai">Other OpenAI-compatible</option>
+              Provider preset
+              <select id="providerPreset">
+                <option value="lmstudio-default">LM Studio local default</option>
+                <option value="openai-chat-mini">OpenAI GPT-5.4 mini</option>
+                <option value="anthropic-haiku">Anthropic Haiku</option>
+                <option value="gemini-flash">Gemini Flash latest</option>
+                <option value="custom-openai">Custom OpenAI-compatible</option>
               </select>
             </label>
-            <label>
-              Base URL
-              <input id="baseUrl" type="text" placeholder="http://localhost:1234/v1">
-            </label>
-            <label>
-              Model
-              <input id="model" type="text" placeholder="qwen/qwen3.5-9b">
-            </label>
-            <label class="span-2">
-              API key
-              <input id="apiKey" type="password" autocomplete="off" placeholder="Optional for LM Studio">
-            </label>
           </div>
+
+          <details class="settings-drawer">
+            <summary>Settings</summary>
+            <div class="form-grid">
+              <label>
+                Provider
+                <select id="provider">
+                  <option value="lmstudio">LM Studio local</option>
+                  <option value="openai">OpenAI / GPT</option>
+                  <option value="anthropic">Anthropic / Claude</option>
+                  <option value="gemini">Google Gemini</option>
+                  <option value="custom-openai">Other OpenAI-compatible</option>
+                </select>
+              </label>
+              <label>
+                Base URL
+                <input id="baseUrl" type="text" placeholder="http://localhost:1234/v1">
+              </label>
+              <label>
+                Model
+                <input id="model" type="text" placeholder="qwen/qwen3.5-9b">
+              </label>
+              <label>
+                Temperature
+                <input id="temperature" type="number" min="0" max="2" step="0.1" value="0.2">
+              </label>
+              <label>
+                Max tokens
+                <input id="maxTokens" type="number" min="1" max="16384" step="1" value="900">
+              </label>
+              <label class="span-2">
+                API key
+                <input id="apiKey" type="password" autocomplete="off" placeholder="Optional for LM Studio">
+              </label>
+            </div>
+          </details>
 
           <div class="examples">
             <button type="button" data-prompt="What can this project demonstrate?">Project Summary</button>
             <button type="button" data-prompt="what is langgraph">LangGraph</button>
             <button type="button" data-prompt="What is 47 * 89? Use the calculator tool.">Calculator</button>
             <button type="button" data-prompt="Save a note with exactly this text: sandbox checkpoint">Save Note</button>
+          </div>
+
+          <div class="demo-strip">
+            <span class="meta">Demo scripts</span>
+            <button type="button" data-demo="memory">Memory</button>
+            <button type="button" data-demo="tools">Tools</button>
+            <button type="button" data-demo="hitl">HITL</button>
+            <button type="button" data-demo="streaming">Streaming</button>
           </div>
 
           <label>
@@ -117,12 +154,26 @@
             <div class="actions">
               <button id="runPrompt" type="button">Run</button>
               <button id="copyLast" type="button">Copy Output</button>
+              <button id="saveChat" type="button">Save Chat</button>
+              <button id="loadChat" type="button">Load Saved</button>
+              <button id="exportChat" type="button">Export Chat</button>
               <button id="resetThread" type="button">Reset Thread</button>
             </div>
             <span id="chatStatus" class="meta" aria-live="polite"></span>
           </div>
 
           <div id="transcript" class="transcript" aria-live="polite"></div>
+
+          <div class="run-inspector">
+            <div>
+              <h3>Graph Timeline</h3>
+              <ol id="timeline" class="timeline"></ol>
+            </div>
+            <div>
+              <h3>Tool Trace</h3>
+              <div id="toolTrace" class="trace-list"></div>
+            </div>
+          </div>
         </section>
 
         <section class="panel tools-panel">
