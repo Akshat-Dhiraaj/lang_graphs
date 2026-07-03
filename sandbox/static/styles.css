@@ -1,7 +1,35 @@
 :root {
+  color-scheme: dark;
+  --bg: #111418;
+  --panel: #181d24;
+  --header: #151a20;
+  --surface: #12171d;
+  --control: #202733;
+  --control-hover: #273140;
+  --field: #111820;
+  --ink: #eef2f7;
+  --muted: #9aa7b6;
+  --line: #303946;
+  --blue: #8ab4ff;
+  --green: #76d39b;
+  --amber: #f3bf6b;
+  --red: #ff8b82;
+  --soft-blue: #1c2b42;
+  --soft-green: #173425;
+  --soft-amber: #322614;
+  --soft-red: #351a1d;
+  --pill: #151b22;
+}
+
+:root[data-theme="light"] {
   color-scheme: light;
   --bg: #f5f7f9;
   --panel: #ffffff;
+  --header: #ffffff;
+  --surface: #fbfcfe;
+  --control: #ffffff;
+  --control-hover: #f8fbff;
+  --field: #ffffff;
   --ink: #18212f;
   --muted: #5d697a;
   --line: #d7dee8;
@@ -10,6 +38,10 @@
   --amber: #a15c07;
   --red: #b42318;
   --soft-blue: #eef4ff;
+  --soft-green: #f0fbf6;
+  --soft-amber: #fff8ea;
+  --soft-red: #fff4f2;
+  --pill: #ffffff;
 }
 
 * {
@@ -24,7 +56,7 @@ body {
 }
 
 header {
-  background: #ffffff;
+  background: var(--header);
   border-bottom: 1px solid var(--line);
 }
 
@@ -129,17 +161,17 @@ textarea {
 
 button {
   min-height: 34px;
-  border: 1px solid #c8d2df;
+  border: 1px solid var(--line);
   border-radius: 6px;
-  background: #ffffff;
+  background: var(--control);
   color: var(--ink);
   padding: 7px 11px;
   cursor: pointer;
 }
 
 button:hover:not(:disabled) {
-  border-color: #9fb1c7;
-  background: #f8fbff;
+  border-color: var(--blue);
+  background: var(--control-hover);
 }
 
 button:disabled {
@@ -151,9 +183,9 @@ input,
 select,
 textarea {
   width: 100%;
-  border: 1px solid #c8d2df;
+  border: 1px solid var(--line);
   border-radius: 6px;
-  background: #ffffff;
+  background: var(--field);
   color: var(--ink);
   padding: 8px 9px;
 }
@@ -195,7 +227,7 @@ label {
   min-height: 28px;
   border: 1px solid var(--line);
   border-radius: 999px;
-  background: #ffffff;
+  background: var(--pill);
   color: var(--muted);
   padding: 4px 9px;
   white-space: nowrap;
@@ -204,19 +236,19 @@ label {
 
 .pill.good {
   border-color: #b7e2ce;
-  background: #f0fbf6;
+  background: var(--soft-green);
   color: var(--green);
 }
 
 .pill.warn {
   border-color: #f3d49d;
-  background: #fff8ea;
+  background: var(--soft-amber);
   color: var(--amber);
 }
 
 .pill.bad {
   border-color: #f3b4ae;
-  background: #fff4f2;
+  background: var(--soft-red);
   color: var(--red);
 }
 
@@ -249,7 +281,7 @@ label {
   overflow: auto;
   border: 1px solid var(--line);
   border-radius: 6px;
-  background: #fbfcfe;
+  background: var(--surface);
   padding: 10px;
   white-space: pre-wrap;
   word-break: break-word;
@@ -267,7 +299,7 @@ label {
   overflow: auto;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #fbfcfe;
+  background: var(--surface);
   padding: 12px;
 }
 
@@ -278,7 +310,7 @@ label {
   padding: 10px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #ffffff;
+  background: var(--panel);
   white-space: pre-wrap;
   word-break: break-word;
 }
@@ -294,7 +326,7 @@ label {
 
 .message.tool {
   justify-self: start;
-  background: #f0fbf6;
+  background: var(--soft-green);
 }
 
 .message .role {

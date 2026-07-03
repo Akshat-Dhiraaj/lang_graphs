@@ -58,6 +58,8 @@ Useful options:
 - Conversation UI with browser-side message history, loading state, copy-last
   action, and thread reset. Graph mode keeps one thread id until reset so memory
   behavior is easier to observe.
+- Dark/light theme toggle in the header. The default theme is dark mode, and the
+  browser remembers the last selected theme locally.
 - Graph-mode chat streams through `/api/agent/stream` using newline-delimited
   JSON. The browser shows graph progress updates while the run is active, then
   replaces the pending assistant message with the final answer.

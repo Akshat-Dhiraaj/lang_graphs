@@ -13,6 +13,40 @@ function newThreadId() {
   return `sandbox-${Math.random().toString(16).slice(2, 10)}`;
 }
 
+function readStoredTheme() {
+  try {
+    return localStorage.getItem("pocket-agent-theme");
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredTheme(theme) {
+  try {
+    localStorage.setItem("pocket-agent-theme", theme);
+  } catch {
+    return;
+  }
+}
+
+function setTheme(theme) {
+  const next = theme === "light" ? "light" : "dark";
+  document.documentElement.dataset.theme = next;
+  const button = $("themeToggle");
+  button.textContent = next === "dark" ? "Light Mode" : "Dark Mode";
+  button.setAttribute("aria-pressed", String(next === "dark"));
+  writeStoredTheme(next);
+}
+
+function initTheme() {
+  setTheme(readStoredTheme() || "dark");
+}
+
+function toggleTheme() {
+  const current = document.documentElement.dataset.theme || "dark";
+  setTheme(current === "dark" ? "light" : "dark");
+}
+
 function pill(text, kind = "") {
   const el = document.createElement("span");
   el.className = `pill ${kind}`.trim();
@@ -340,6 +374,7 @@ async function loadDefaultModel() {
 }
 
 function wireEvents() {
+  $("themeToggle").addEventListener("click", toggleTheme);
   $("refreshStatus").addEventListener("click", refreshStatus);
   $("checkModel").addEventListener("click", refreshStatus);
   $("loadDefaultModel").addEventListener("click", loadDefaultModel);
@@ -371,6 +406,7 @@ function wireEvents() {
   $("rejectHitl").addEventListener("click", () => resumeHitl(false));
 }
 
+initTheme();
 wireEvents();
 updateThreadLabel();
 setHitlPending(false);
