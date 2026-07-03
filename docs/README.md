@@ -1,0 +1,31 @@
+# Documentation Index
+
+The markdown files are grouped by how they should be used.
+
+## Project State
+
+- [AI_context.md](project/AI_context.md) — operational handoff for humans and AI
+  assistants. Read this before changing code.
+- [roadmap.md](project/roadmap.md) — current status, milestones, and remaining
+  work.
+- [overnight_system_run.md](project/overnight_system_run.md) — system snapshot,
+  overnight monitor command, and log layout.
+- [lmstudio_live_validation.md](project/lmstudio_live_validation.md) — verified
+  local model, load settings, and live verifier result.
+
+## Plans
+
+- [LangGraph_Foundations_Project_Plan.md](plans/LangGraph_Foundations_Project_Plan.md)
+  — original plan and acceptance criteria. It is historical context; the roadmap
+  is the current source for status.
+
+## Reference
+
+- [LangGraph_Information_Bank.md](reference/LangGraph_Information_Bank.md) —
+  fact-checked LangGraph notes from official docs and package sources.
+
+## Working Rule
+
+`pocket-agent/` is generated output. Durable code changes belong in
+`scripts/build_pocket_agent.sh` first, then the generated tree should be
+regenerated and verified.
