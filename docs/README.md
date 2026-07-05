@@ -20,6 +20,8 @@ The markdown files are grouped by how they should be used.
   server/Studio walkthrough results.
 - [sandbox_launcher.md](project/sandbox_launcher.md) — local localhost overview,
   provider sandbox, and latest repo gap review.
+- [ui_qa/UI_QA_REPORT.md](project/ui_qa/UI_QA_REPORT.md) — screenshot package
+  and visual QA notes for the sandbox UI.
 
 ## Plans
 
